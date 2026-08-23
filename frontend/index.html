@@ -35,25 +35,47 @@
   <link rel="stylesheet" href="/static/css/style.css?v=1.0.2">
 </head>
 <body class="bg-zinc-950 text-zinc-100 h-full flex flex-col overflow-hidden font-sans antialiased select-none">
-  <!-- Global Error Handler for Debugging Black Screens -->
   <script>
-    window.onerror = function(message, source, lineno, colno, error) {
+    var originalError = console.error;
+    var originalWarn = console.warn;
+    
+    function showErr(msg, isWarn) {
       var errDiv = document.createElement('div');
       errDiv.style.position = 'fixed';
       errDiv.style.top = '0';
       errDiv.style.left = '0';
       errDiv.style.width = '100%';
       errDiv.style.padding = '20px';
-      errDiv.style.background = 'rgba(220, 38, 38, 0.9)';
+      errDiv.style.background = isWarn ? 'rgba(234, 179, 8, 0.9)' : 'rgba(220, 38, 38, 0.9)';
       errDiv.style.color = 'white';
       errDiv.style.zIndex = '999999';
       errDiv.style.fontFamily = 'monospace';
       errDiv.style.wordBreak = 'break-all';
-      errDiv.innerHTML = '<b>CRITICAL ERROR:</b><br>' + message + '<br>Source: ' + source + ':' + lineno + ':' + colno + '<br>Stack:<br>' + (error && error.stack ? error.stack.replace(/\n/g, '<br>') : '');
+      errDiv.style.maxHeight = '100vh';
+      errDiv.style.overflow = 'auto';
+      errDiv.innerHTML = '<b>' + (isWarn ? 'CONSOLE WARN' : 'CRITICAL ERROR') + ':</b><br>' + String(msg).replace(/\n/g, '<br>');
       document.body.appendChild(errDiv);
+    }
+    
+    console.error = function() {
+      var msg = Array.from(arguments).join(' ');
+      showErr(msg, false);
+      originalError.apply(console, arguments);
     };
+    
+    console.warn = function() {
+      var msg = Array.from(arguments).join(' ');
+      if (msg.includes('Vue received a Component') || msg.includes('devtools')) return;
+      showErr(msg, true);
+      originalWarn.apply(console, arguments);
+    };
+
+    window.onerror = function(message, source, lineno, colno, error) {
+      showErr(message + '<br>Source: ' + source + ':' + lineno + ':' + colno + '<br>Stack:<br>' + (error && error.stack ? error.stack : ''), false);
+    };
+    
     window.addEventListener('unhandledrejection', function(event) {
-      window.onerror('Unhandled Promise Rejection: ' + (event.reason && event.reason.message ? event.reason.message : event.reason), 'Promise', 0, 0, event.reason);
+      showErr('Unhandled Promise Rejection: ' + (event.reason && event.reason.message ? event.reason.message : event.reason), false);
     });
   </script>
 
@@ -1284,11 +1306,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.0.4"></script>
-  <script src="/static/js/touch.js?v=1.0.4"></script>
-  <script src="/static/js/modules/api.js?v=1.0.4"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.0.4"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.0.4"></script>
-  <script src="/static/js/app.js?v=1.0.4"></script>
+  <script src="/static/js/i18n.js?v=1.0.5"></script>
+  <script src="/static/js/touch.js?v=1.0.5"></script>
+  <script src="/static/js/modules/api.js?v=1.0.5"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.0.5"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.0.5"></script>
+  <script src="/static/js/app.js?v=1.0.5"></script>
 </body>
 </html>

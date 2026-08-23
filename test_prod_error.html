@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="./frontend/vendor/vue.global.prod.js"></script>
+</head>
+<body>
+  <script>
+    window.onerror = function(msg) {
+      console.log("CAUGHT GLOBALLY:", msg);
+    };
+    console.error = function(msg) {
+      console.log("CAUGHT BY CONSOLE.ERROR:", msg);
+    }
+  </script>
+  <div id="app">{{ missingFunction() }}</div>
+  <script>
+    Vue.createApp({}).mount('#app');
+  </script>
+</body>
+</html>

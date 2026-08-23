@@ -478,6 +478,7 @@ createApp({
       currentPath,
       breadcrumbs,
       searchQuery,
+      performGlobalSearch,
       filteredFolders,
       filteredComics,
       loading,
