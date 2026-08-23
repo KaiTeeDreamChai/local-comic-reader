@@ -275,3 +275,5 @@ const i18n = {
     aboutDesc: 'Lightweight local comic, manga, novel, album & video LAN reader built with FastAPI and Vue 3.'
   }
 };
+
+window.i18nTranslations = i18n;

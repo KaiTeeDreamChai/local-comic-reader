@@ -1,6 +1,10 @@
 @charset "UTF-8";
 
 /* Base & Custom Touch Styles */
+[v-cloak] {
+  display: none !important;
+}
+
 :root {
   --bg-primary: #121214;
   --bg-secondary: #1a1a1e;
