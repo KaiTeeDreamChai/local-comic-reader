@@ -83,7 +83,7 @@ def fuzzy_match(query: str, target: str) -> bool:
 
 def search_library(q: str = Query(...)):
     import os
-    from ..scanner import VIDEO_EXTENSIONS, BOOK_EXTENSIONS, ARCHIVE_EXTENSIONS, PDF_EXTENSIONS
+    from ..scanner import LibraryScanner, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, BOOK_EXTENSIONS, ARCHIVE_EXTENSIONS, PDF_EXTENSIONS
     config = load_config()
     allowed_roots = [Path(shelf["path"]).resolve() for shelf in config.get("bookshelves", []) if shelf.get("path")]
     
@@ -104,14 +104,44 @@ def search_library(q: str = Query(...)):
             for d in dirnames:
                 if fuzzy_match(query, d):
                     full_path = Path(dirpath) / d
-                    folders.append({
-                        "id": encode_path(str(full_path)),
-                        "name": d,
-                        "path": str(full_path),
-                        "type": "directory",
-                        "has_images": False,
-                        "cover_url": None
-                    })
+                    try:
+                        has_images = LibraryScanner.is_comic_folder(full_path)
+                        sub_dirs = [s for s in full_path.iterdir() if s.is_dir() and not s.name.startswith(".")] if full_path.exists() else []
+                        if has_images and len(sub_dirs) == 0:
+                            # It's an image comic album
+                            page_count = sum(1 for e in full_path.iterdir() if e.is_file() and e.suffix.lower() in IMAGE_EXTENSIONS and not e.name.startswith("."))
+                            encoded_id = encode_path(str(full_path))
+                            comics.append({
+                                "id": encoded_id,
+                                "name": d,
+                                "title": d,
+                                "type": "folder",
+                                "ext": "album",
+                                "path": str(full_path),
+                                "page_count": page_count,
+                                "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
+                            })
+                        else:
+                            # Regular directory / series folder
+                            cover_target = LibraryScanner.find_first_cover_target(full_path)
+                            cover_url = f"/api/comic/thumbnail?comic_id={encode_path(cover_target)}&page_index=0" if cover_target else None
+                            folders.append({
+                                "id": encode_path(str(full_path)),
+                                "name": d,
+                                "path": str(full_path),
+                                "type": "directory",
+                                "has_images": has_images,
+                                "cover_url": cover_url
+                            })
+                    except Exception:
+                        folders.append({
+                            "id": encode_path(str(full_path)),
+                            "name": d,
+                            "path": str(full_path),
+                            "type": "directory",
+                            "has_images": False,
+                            "cover_url": None
+                        })
                     if len(folders) + len(comics) >= max_results: break
             
             if len(folders) + len(comics) >= max_results: break

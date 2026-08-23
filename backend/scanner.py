@@ -180,8 +180,20 @@ class LibraryScanner:
                         "page_count": page_count,
                         "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0" if page_count > 0 else None
                     })
-            except Exception as e:
-                print(f"Error scanning entry {entry}: {e}")
+        # If the directory directly contains loose images and no sub-comics/folders, present it as a comic album
+        image_files = [e for e in entries if e.is_file() and e.suffix.lower() in IMAGE_EXTENSIONS]
+        if image_files and len(folders) == 0 and len(comics) == 0:
+            encoded_id = encode_path(str(dir_path))
+            comics.append({
+                "id": encoded_id,
+                "name": dir_path.name,
+                "title": dir_path.name,
+                "type": "folder",
+                "ext": "album",
+                "path": str(dir_path),
+                "page_count": len(image_files),
+                "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
+            })
 
         # Compute safe parent path (do not escape above bookshelf root)
         parent_path_str = None
