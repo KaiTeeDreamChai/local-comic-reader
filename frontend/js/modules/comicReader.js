@@ -151,7 +151,8 @@ function useComicReader(currentComic, currentPageIndex, weakNetworkMode, t) {
 
   const toggleReadingMode = (saveSettingsCallback) => {
     readingMode.value = readingMode.value === 'paged' ? 'scroll' : 'paged';
-    if (saveSettingsCallback) saveSettingsCallback();
+    localStorage.setItem('comic_reading_mode', readingMode.value);
+    if (typeof saveSettingsCallback === 'function') saveSettingsCallback();
     if (readingMode.value === 'scroll') {
       scrollToCurrentWebtoonPage();
     }
@@ -159,7 +160,8 @@ function useComicReader(currentComic, currentPageIndex, weakNetworkMode, t) {
 
   const toggleReadingDirection = (saveSettingsCallback) => {
     readingDirection.value = readingDirection.value === 'ltr' ? 'rtl' : 'ltr';
-    if (saveSettingsCallback) saveSettingsCallback();
+    localStorage.setItem('comic_reading_direction', readingDirection.value);
+    if (typeof saveSettingsCallback === 'function') saveSettingsCallback();
   };
 
   const onLeftZoneClick = () => {
