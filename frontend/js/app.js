@@ -41,6 +41,36 @@ createApp({
     const loadedPages = ref(new Set());
     const weakNetworkMode = ref(localStorage.getItem('comic_weak_net_mode') === 'true');
 
+    // Novel / Ebook Specific Settings
+    const novelFontSize = ref(parseInt(localStorage.getItem('novel_font_size') || '18', 10));
+    const novelTheme = ref(localStorage.getItem('novel_theme') || 'night'); // 'day' | 'sepia' | 'green' | 'night'
+    const novelChapterIndex = ref(0);
+
+    const changeNovelFontSize = (delta) => {
+      const newSize = Math.min(36, Math.max(12, novelFontSize.value + delta));
+      novelFontSize.value = newSize;
+      localStorage.setItem('novel_font_size', newSize.toString());
+    };
+
+    const setNovelTheme = (theme) => {
+      novelTheme.value = theme;
+      localStorage.setItem('novel_theme', theme);
+    };
+
+    const goToNovelChapter = (idx) => {
+      if (!currentComic.value || !currentComic.value.chapters) return;
+      if (idx < 0 || idx >= currentComic.value.chapters.length) return;
+      novelChapterIndex.value = idx;
+      currentPageIndex.value = idx;
+      if (currentComic.value.id) {
+        localStorage.setItem(`comic_progress_${currentComic.value.id}`, idx);
+      }
+      nextTick(() => {
+        const viewport = document.querySelector('.novel-reader-viewport');
+        if (viewport) viewport.scrollTop = 0;
+      });
+    };
+
     let touchController = null;
     let hudTimer = null;
 
@@ -288,7 +318,8 @@ createApp({
         // Restore progress if available
         const savedPage = localStorage.getItem(`comic_progress_${comic.id}`);
         const initPage = savedPage ? parseInt(savedPage, 10) : 0;
-        currentPageIndex.value = Math.min(Math.max(0, initPage), Math.max(0, data.total_pages - 1));
+        currentPageIndex.value = Math.min(Math.max(0, initPage), Math.max(0, (data.total_pages || 1) - 1));
+        novelChapterIndex.value = currentPageIndex.value;
 
         viewMode.value = 'reader';
         showHud.value = true;
@@ -298,14 +329,19 @@ createApp({
         resetHudTimer();
 
         await nextTick();
-        initTouch();
-        preloadPages();
+        if (data.type === 'book') {
+          const viewport = document.querySelector('.novel-reader-viewport');
+          if (viewport) viewport.scrollTop = 0;
+        } else {
+          initTouch();
+          preloadPages();
 
-        if (readingMode.value === 'scroll') {
-          scrollToCurrentWebtoonPage();
+          if (readingMode.value === 'scroll') {
+            scrollToCurrentWebtoonPage();
+          }
         }
       } catch (e) {
-        alert('打开漫画失败: ' + e.message);
+        alert('打开内容失败: ' + e.message);
       } finally {
         loading.value = false;
       }
@@ -733,7 +769,13 @@ createApp({
       handleWebtoonScroll,
       currentLang,
       t,
-      setLanguage
+      setLanguage,
+      novelFontSize,
+      novelTheme,
+      novelChapterIndex,
+      changeNovelFontSize,
+      setNovelTheme,
+      goToNovelChapter
     };
   }
 }).mount('#app');

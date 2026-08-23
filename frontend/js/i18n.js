@@ -5,7 +5,7 @@
 const i18n = {
   zh: {
     // Header
-    appName: '本地画册 & 漫画阅读器',
+    appName: '本地画册 & 电子书阅读器',
     bookshelfManage: '书架管理',
     lanDevice: '局域网设备连接',
     turboModeOn: '弱网加速模式：已开启',
@@ -15,22 +15,23 @@ const i18n = {
 
     // Breadcrumbs & Search
     home: '首页',
-    searchPlaceholder: '搜索画册、漫画、视频或文件夹名称...',
+    searchPlaceholder: '搜索画册、漫画、小说、电子书、视频...',
 
     // Bookshelves / Library
     bookshelfCount: '已添加的书架目录',
     noBookshelves: '暂无书架目录',
-    noBookshelvesDesc: '请点击上方“书架管理”添加您电脑上的漫画文件夹（例如 D:\\Comics 或 ~/Pictures）',
+    noBookshelvesDesc: '请点击上方“书架管理”添加您电脑上的文件夹（例如 D:\\Comics 或 ~/Books）',
     addBookshelfNow: '立即添加书架目录',
     bookshelfBadge: '书架',
     folderBadge: '目录',
     subFolders: '子目录',
-    comicsSection: '漫画、画册与视频',
+    comicsSection: '漫画、画册、电子书与视频',
     noCover: '无封面',
     videoBadge: '视频',
+    bookBadge: '电子书',
     folderTypeBadge: '文件夹',
-    downloadZipTitle: '下载ZIP压缩包',
-    emptyDir: '此文件夹下未找到漫画、画册、ZIP、PDF或视频文件',
+    downloadZipTitle: '下载/导出文件',
+    emptyDir: '此文件夹下未找到漫画、小说、电子书、ZIP、PDF或视频文件',
 
     // Error
     errorTitle: '该目录不可用或无法访问',
@@ -50,6 +51,7 @@ const i18n = {
     exit: '退出',
     pageIndicator: '第 {current} / {total} 页',
     pagePairIndicator: '第 {start}-{end} / {total} 页',
+    chapterIndicator: '第 {current} / {total} 章',
     modePaged: '分页',
     modeScroll: '条漫',
     modePagedDesc: '切换为条漫瀑布流',
@@ -61,22 +63,30 @@ const i18n = {
     dirRTLDesc: '切换为左至右(LTR)',
     dirLTRDesc: '切换为右至左日漫(RTL)',
     fullscreen: '全屏切换',
-    downloadCurrent: '下载当前漫画 ({title}.zip)',
+    downloadCurrent: '下载当前文件 ({title})',
     mangaRTL: '日漫(RTL)',
     mangaLTR: '单页(LTR)',
     mangaDoubleRTL: '双页日漫(RTL)',
     mangaDoubleLTR: '双页(LTR)',
     waterfallMode: '条漫',
     videoMode: '视频播放',
+    bookMode: '小说阅读',
 
     // Reader Bottom Bar & Drawer
-    prevPageTitle: '上一页 / 翻页',
-    nextPageTitle: '下一页 / 翻页',
-    allThumbnails: '查看所有缩略图',
+    prevPageTitle: '上一页 / 上一章',
+    nextPageTitle: '下一页 / 下一章',
+    allThumbnails: '查看所有章节/缩略图',
     topExitHint: '点击顶部呼出菜单与退出按钮',
-    leftClickTurn: '点击翻页 (左侧区域)',
-    rightClickTurn: '点击翻页 (右侧区域)',
+    leftClickTurn: '点击翻页 / 上一章',
+    rightClickTurn: '点击翻页 / 下一章',
     centerClickHud: '点击呼出/收起控制栏',
+    tocTitle: '章节目录',
+    fontSize: '字体大小',
+    themeDay: '日间明亮',
+    themeSepia: '护眼羊皮纸',
+    themeNight: '夜间深黑',
+    themeGreen: '青草清新',
+    themeMode: '阅读配色',
 
     // Video Player
     videoUnsupported: '您的浏览器暂不支持播放此视频格式，请尝试下载后播放。',
@@ -84,7 +94,7 @@ const i18n = {
     // Bookshelf Modal
     modalBookshelfTitle: '书架目录管理',
     inputPathLabel: '添加本地电脑文件夹路径',
-    inputPathPlaceholder: '例如: D:\\Comics 或 /Users/name/Pictures',
+    inputPathPlaceholder: '例如: D:\\Books 或 /Users/name/Documents',
     inputNamePlaceholder: '书架名称 (可选，默认使用文件夹名)',
     btnAdd: '添加',
     btnAdding: '添加中...',
@@ -99,10 +109,10 @@ const i18n = {
     lanDesc: '请确保平板、手机与电脑连接在同一个 Wi-Fi / 局域网下，在手机或平板浏览器中输入以下地址即可浏览：',
     openLink: '打开',
     touchTipsTitle: '触屏手势操作提示：',
-    touchTip1: '左右滑动或点击两侧 20% 区域即可快速翻页',
+    touchTip1: '左右滑动或点击两侧 20% 区域即可快速翻页/切章',
     touchTip2: '双页模式下直接点击左右两页即可翻页',
     touchTip3: '双击或两指张开可放大细节 (Pinch-to-zoom)',
-    touchTip4: '支持国漫 (LTR) / 日漫 (RTL) / 条漫瀑布流无缝切换',
+    touchTip4: '小说模式支持调节字体、日间/羊皮纸/夜间主题切换与目录跳转',
     touchTip5: '弱网模式可大幅加速图片加载并优化视频播放',
     btnGotIt: '知道了',
 
@@ -116,14 +126,16 @@ const i18n = {
     defaultDirection: '默认分页翻页方向',
     dirLTR: '从左往右 (LTR / 国漫/画集)',
     dirRTL: '从右往左 (RTL / 日漫)',
+    novelFontSize: '小说默认字号',
+    novelTheme: '小说默认主题',
     weakNetworkDesc: '弱网加速模式：自适应优化画质、预加载并平滑视频分段',
     aboutApp: '关于本项目',
-    aboutDesc: '轻量级本地漫画/画册/视频局域网浏览工具，基于 FastAPI + Vue3 开发。'
+    aboutDesc: '轻量级本地漫画/小说/画册/视频局域网浏览工具，基于 FastAPI + Vue3 开发。'
   },
 
   en: {
     // Header
-    appName: 'Local Comic & Media Reader',
+    appName: 'Local Comic & Book Reader',
     bookshelfManage: 'Bookshelves',
     lanDevice: 'LAN Connection',
     turboModeOn: 'Turbo Mode: Enabled',
@@ -133,22 +145,23 @@ const i18n = {
 
     // Breadcrumbs & Search
     home: 'Home',
-    searchPlaceholder: 'Search albums, comics, videos or folders...',
+    searchPlaceholder: 'Search albums, comics, novels, videos or folders...',
 
     // Bookshelves / Library
     bookshelfCount: 'Configured Bookshelves',
     noBookshelves: 'No Bookshelves Configured',
-    noBookshelvesDesc: 'Click "Bookshelves" above to add folders from your PC (e.g. D:\\Comics or ~/Pictures)',
+    noBookshelvesDesc: 'Click "Bookshelves" above to add folders from your PC (e.g. D:\\Comics or ~/Books)',
     addBookshelfNow: 'Add Bookshelf Directory',
     bookshelfBadge: 'Bookshelf',
     folderBadge: 'Folder',
     subFolders: 'Sub-folders',
-    comicsSection: 'Comics, Albums & Videos',
+    comicsSection: 'Comics, Novels, Albums & Videos',
     noCover: 'No Cover',
     videoBadge: 'VIDEO',
+    bookBadge: 'BOOK',
     folderTypeBadge: 'Folder',
-    downloadZipTitle: 'Download as ZIP archive',
-    emptyDir: 'No comics, albums, archives, PDFs or videos found in this folder',
+    downloadZipTitle: 'Download / Export File',
+    emptyDir: 'No comics, novels, ebooks, archives, PDFs or videos found in this folder',
 
     // Error
     errorTitle: 'Directory Unavailable or Inaccessible',
@@ -168,6 +181,7 @@ const i18n = {
     exit: 'Exit',
     pageIndicator: 'Page {current} / {total}',
     pagePairIndicator: 'Pages {start}-{end} / {total}',
+    chapterIndicator: 'Chapter {current} / {total}',
     modePaged: 'Paged',
     modeScroll: 'Waterfall',
     modePagedDesc: 'Switch to continuous waterfall scroll',
@@ -179,22 +193,30 @@ const i18n = {
     dirRTLDesc: 'Switch to Left-to-Right (LTR)',
     dirLTRDesc: 'Switch to Right-to-Left Manga (RTL)',
     fullscreen: 'Toggle Fullscreen',
-    downloadCurrent: 'Download comic ({title}.zip)',
+    downloadCurrent: 'Download file ({title})',
     mangaRTL: 'Manga(RTL)',
     mangaLTR: 'Single(LTR)',
     mangaDoubleRTL: 'Dual Manga(RTL)',
     mangaDoubleLTR: 'Dual(LTR)',
     waterfallMode: 'Waterfall',
     videoMode: 'Video Playback',
+    bookMode: 'Ebook Reader',
 
     // Reader Bottom Bar & Drawer
-    prevPageTitle: 'Previous Page / Turn',
-    nextPageTitle: 'Next Page / Turn',
-    allThumbnails: 'Show All Thumbnails',
+    prevPageTitle: 'Previous Page / Chapter',
+    nextPageTitle: 'Next Page / Chapter',
+    allThumbnails: 'Table of Contents / Pages',
     topExitHint: 'Tap top area to show HUD and exit button',
-    leftClickTurn: 'Click to turn page (Left side)',
-    rightClickTurn: 'Click to turn page (Right side)',
+    leftClickTurn: 'Click to turn page / previous chapter',
+    rightClickTurn: 'Click to turn page / next chapter',
     centerClickHud: 'Click to toggle control bars',
+    tocTitle: 'Table of Contents',
+    fontSize: 'Font Size',
+    themeDay: 'Day White',
+    themeSepia: 'Sepia Eye-Care',
+    themeNight: 'Night Dark',
+    themeGreen: 'Soft Green',
+    themeMode: 'Color Theme',
 
     // Video Player
     videoUnsupported: 'Your browser cannot play this video directly. Please download the file to watch.',
@@ -202,7 +224,7 @@ const i18n = {
     // Bookshelf Modal
     modalBookshelfTitle: 'Bookshelf Management',
     inputPathLabel: 'Add Local Computer Folder Path',
-    inputPathPlaceholder: 'e.g. D:\\Comics or /Users/name/Pictures',
+    inputPathPlaceholder: 'e.g. D:\\Books or /Users/name/Documents',
     inputNamePlaceholder: 'Bookshelf Name (Optional, defaults to folder name)',
     btnAdd: 'Add',
     btnAdding: 'Adding...',
@@ -217,11 +239,11 @@ const i18n = {
     lanDesc: 'Make sure your tablet/phone is connected to the same Wi-Fi network as this PC. Open your browser and navigate to:',
     openLink: 'Open',
     touchTipsTitle: 'Touch Gesture Tips:',
-    touchTip1: 'Swipe left/right or tap side 20% areas to turn pages',
+    touchTip1: 'Swipe left/right or tap side 20% areas to turn pages or chapters',
     touchTip2: 'In dual-page mode, tap left or right page to turn pages',
     touchTip3: 'Double tap or pinch with two fingers to zoom in (Pinch-to-zoom)',
-    touchTip4: 'Switch between LTR / RTL Manga and Waterfall scroll modes anytime',
-    touchTip5: 'Turbo Mode accelerates image loading and optimizes video chunks',
+    touchTip4: 'Ebook reader supports font sizing, Day/Sepia/Night themes, and TOC jump',
+    touchTip5: 'Turbo Mode accelerates image delivery and optimizes video chunks',
     btnGotIt: 'Got it',
 
     // Settings Modal
@@ -234,8 +256,10 @@ const i18n = {
     defaultDirection: 'Default Paged Direction',
     dirLTR: 'Left to Right (LTR / Albums)',
     dirRTL: 'Right to Left (RTL / Manga)',
+    novelFontSize: 'Novel Default Font Size',
+    novelTheme: 'Novel Default Theme',
     weakNetworkDesc: 'Turbo Mode: Optimizes image delivery, preloads forward pages, and smooths video streams',
     aboutApp: 'About',
-    aboutDesc: 'Lightweight local comic, manga, album & video LAN reader built with FastAPI and Vue 3.'
+    aboutDesc: 'Lightweight local comic, manga, novel, album & video LAN reader built with FastAPI and Vue 3.'
   }
 };

@@ -12,9 +12,11 @@ from .utils import (
     ARCHIVE_EXTENSIONS,
     PDF_EXTENSIONS,
     VIDEO_EXTENSIONS,
+    BOOK_EXTENSIONS,
     natural_sort_key,
     encode_path
 )
+from .novel import NovelParser
 
 CACHE_DIR = Path(__file__).resolve().parent.parent / "data" / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -86,7 +88,24 @@ class ComicReader:
 
         encoded_comic_path = encode_path(str(target.resolve()))
 
-        # Case 0: Video Media File
+        # Case 0: Book / Novel / Ebook File
+        if target.is_file() and target.suffix.lower() in BOOK_EXTENSIONS:
+            book_data = NovelParser.parse_book(str(target))
+            return {
+                "id": encoded_comic_path,
+                "title": book_data["title"],
+                "type": "book",
+                "format": book_data["format"],
+                "path": str(target),
+                "total_pages": book_data["total_chapters"],
+                "total_chapters": book_data["total_chapters"],
+                "total_words": book_data["total_words"],
+                "chapters": book_data["chapters"],
+                "cover_url": f"/api/comic/thumbnail?comic_id={encoded_comic_path}&page_index=0",
+                "is_book": True
+            }
+
+        # Case 0.5: Video Media File
         if target.is_file() and target.suffix.lower() in VIDEO_EXTENSIONS:
             pages = [
                 {
@@ -248,6 +267,12 @@ class ComicReader:
                 elif ext == ".avif":
                     media_type = "image/avif"
                 return data, media_type
+
+        # Ebook cover generation
+        if target.is_file() and target.suffix.lower() in BOOK_EXTENSIONS:
+            fmt = target.suffix.lower()[1:]
+            cover_bytes = NovelParser.generate_book_cover(target.stem, fmt)
+            return cover_bytes, "image/jpeg"
 
         # Video file first frame / cover
         if target.is_file() and target.suffix.lower() in VIDEO_EXTENSIONS:

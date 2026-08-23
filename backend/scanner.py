@@ -8,6 +8,7 @@ from .utils import (
     ARCHIVE_EXTENSIONS,
     PDF_EXTENSIONS,
     VIDEO_EXTENSIONS,
+    BOOK_EXTENSIONS,
     SUPPORTED_EXTENSIONS,
     natural_sort_key,
     encode_path
@@ -28,8 +29,8 @@ class LibraryScanner:
 
     @staticmethod
     def is_archive_or_pdf_or_video(file_path: Path) -> bool:
-        """Check if file is a supported archive, PDF or video."""
-        return file_path.is_file() and file_path.suffix.lower() in (ARCHIVE_EXTENSIONS | PDF_EXTENSIONS | VIDEO_EXTENSIONS) and not file_path.name.startswith(".")
+        """Check if file is a supported archive, PDF, video or ebook."""
+        return file_path.is_file() and file_path.suffix.lower() in (ARCHIVE_EXTENSIONS | PDF_EXTENSIONS | VIDEO_EXTENSIONS | BOOK_EXTENSIONS) and not file_path.name.startswith(".")
 
     @classmethod
     def find_first_cover_target(cls, folder_path: Path, max_depth: int = 3) -> Optional[str]:
@@ -148,6 +149,18 @@ class LibraryScanner:
                         "name": entry.name,
                         "title": entry.stem,
                         "type": "video",
+                        "ext": entry.suffix.lower(),
+                        "path": str(entry),
+                        "page_count": 1,
+                        "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
+                    })
+                elif entry.is_file() and entry.suffix.lower() in BOOK_EXTENSIONS:
+                    encoded_id = encode_path(str(entry))
+                    comics.append({
+                        "id": encoded_id,
+                        "name": entry.name,
+                        "title": entry.stem,
+                        "type": "book",
                         "ext": entry.suffix.lower(),
                         "path": str(entry),
                         "page_count": 1,

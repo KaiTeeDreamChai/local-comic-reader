@@ -20,6 +20,7 @@ from .utils import (
     ARCHIVE_EXTENSIONS,
     IMAGE_EXTENSIONS,
     PDF_EXTENSIONS,
+    BOOK_EXTENSIONS,
     natural_sort_key
 )
 from .reader import ComicReader
@@ -323,6 +324,17 @@ def download_comic(comic_id: str = Query(...)):
                 media_type="application/zip",
                 filename=filename,
                 headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
+            )
+
+        # If ebook file, allow direct file download
+        if target.is_file() and target.suffix.lower() in BOOK_EXTENSIONS:
+            orig_filename = target.name
+            encoded_orig = quote(orig_filename)
+            return FileResponse(
+                path=str(target),
+                media_type="text/plain",
+                filename=orig_filename,
+                headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_orig}"}
             )
 
         # If it's a folder of images or a PDF, pack into a ZIP archive

@@ -296,6 +296,9 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
+                    <svg v-else-if="comic.type === 'book'" class="w-10 h-10 mb-2 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
                     <svg v-else class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
@@ -328,11 +331,11 @@
 
                   <!-- Type Badge -->
                   <div class="absolute top-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
-                    {{ comic.type === 'video' ? t('videoBadge') : (comic.type === 'pdf' ? 'PDF' : (comic.type === 'archive' ? 'ZIP' : t('folderTypeBadge'))) }}
+                    {{ comic.type === 'book' ? (comic.ext ? comic.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (comic.type === 'video' ? t('videoBadge') : (comic.type === 'pdf' ? 'PDF' : (comic.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
                   </div>
 
-                  <!-- Page Count / Video Duration Badge -->
-                  <div v-if="comic.page_count && comic.type !== 'video'" class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[10px] font-medium text-zinc-300">
+                  <!-- Page Count / Chapters Badge -->
+                  <div v-if="comic.page_count && comic.type !== 'video' && comic.type !== 'book'" class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[10px] font-medium text-zinc-300">
                     {{ comic.page_count }}P
                   </div>
                 </div>
@@ -359,7 +362,7 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 2. 触屏阅读器 / 视频播放视图 (READER / MEDIA VIEW) -->
+    <!-- 2. 触屏阅读器 / 电子书 / 视频播放视图 (READER / MEDIA VIEW) -->
     <!-- ========================================== -->
     <div v-if="viewMode === 'reader'" class="h-full w-full bg-black relative flex flex-col select-none overflow-hidden">
       
@@ -385,7 +388,12 @@
               {{ currentComic?.title }}
             </h2>
             <div class="text-[11px] text-zinc-400 flex items-center gap-2">
-              <template v-if="currentComic?.type !== 'video'">
+              <template v-if="currentComic?.type === 'book'">
+                <span class="text-emerald-400 font-semibold">{{ t('chapterIndicator', { current: novelChapterIndex + 1, total: currentComic?.total_chapters }) }}</span>
+                <span class="text-zinc-600">•</span>
+                <span class="truncate max-w-[150px]">{{ currentComic?.chapters[novelChapterIndex]?.title }}</span>
+              </template>
+              <template v-else-if="currentComic?.type !== 'video'">
                 <span v-if="!isDoublePage">{{ t('pageIndicator', { current: currentPageIndex + 1, total: currentComic?.total_pages }) }}</span>
                 <span v-else>{{ t('pagePairIndicator', { start: currentPageIndex + 1, end: (currentPairIndex !== null ? currentPairIndex + 1 : currentPageIndex + 1), total: currentComic?.total_pages }) }}</span>
                 <span class="text-zinc-600">•</span>
@@ -400,7 +408,62 @@
 
         <!-- Mode & Orientation Toggles -->
         <div class="flex items-center gap-1.5 shrink-0">
-          <template v-if="currentComic?.type !== 'video'">
+          
+          <!-- Novel Font Size and Theme Toggles -->
+          <template v-if="currentComic?.type === 'book'">
+            <!-- Font Size - -->
+            <button 
+              @click="changeNovelFontSize(-2)" 
+              title="缩小字体"
+              class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold w-7 h-7 flex items-center justify-center transition-colors"
+            >
+              A-
+            </button>
+            <span class="text-xs font-mono text-zinc-400 w-5 text-center">{{ novelFontSize }}</span>
+            <!-- Font Size + -->
+            <button 
+              @click="changeNovelFontSize(2)" 
+              title="放大字体"
+              class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold w-7 h-7 flex items-center justify-center transition-colors"
+            >
+              A+
+            </button>
+
+            <!-- Theme Switcher Palette -->
+            <div class="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-xl ml-1">
+              <!-- Day Light -->
+              <button 
+                @click="setNovelTheme('day')" 
+                :class="novelTheme === 'day' ? 'ring-2 ring-blue-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                class="w-5 h-5 rounded-full bg-[#faf9f5] border border-zinc-300 transition-all"
+                :title="t('themeDay')"
+              ></button>
+              <!-- Sepia -->
+              <button 
+                @click="setNovelTheme('sepia')" 
+                :class="novelTheme === 'sepia' ? 'ring-2 ring-amber-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                class="w-5 h-5 rounded-full bg-[#f6ebd4] border border-amber-300 transition-all"
+                :title="t('themeSepia')"
+              ></button>
+              <!-- Green Eye-Care -->
+              <button 
+                @click="setNovelTheme('green')" 
+                :class="novelTheme === 'green' ? 'ring-2 ring-emerald-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                class="w-5 h-5 rounded-full bg-[#dceada] border border-emerald-300 transition-all"
+                :title="t('themeGreen')"
+              ></button>
+              <!-- Night Dark -->
+              <button 
+                @click="setNovelTheme('night')" 
+                :class="novelTheme === 'night' ? 'ring-2 ring-blue-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                class="w-5 h-5 rounded-full bg-[#18181b] border border-zinc-700 transition-all"
+                :title="t('themeNight')"
+              ></button>
+            </div>
+          </template>
+
+          <!-- Comic Toggles -->
+          <template v-else-if="currentComic?.type !== 'video'">
             <!-- Reading Mode (Paged vs Scroll) -->
             <button 
               @click="toggleReadingMode" 
@@ -458,7 +521,7 @@
             </svg>
           </button>
 
-          <!-- Download ZIP in Reader -->
+          <!-- Download / Export File in Reader -->
           <button 
             @click="downloadComic(currentComic)" 
             :title="t('downloadCurrent', { title: currentComic?.title })"
@@ -473,8 +536,9 @@
             </svg>
           </button>
 
-          <!-- Weak Network Toggle in Reader HUD -->
+          <!-- Weak Network Toggle in Reader HUD (for comics/videos) -->
           <button 
+            v-if="currentComic?.type !== 'book'"
             @click="toggleWeakNetworkMode"
             :title="weakNetworkMode ? t('turboModeOn') : t('turboModeOff')"
             :class="weakNetworkMode ? 'text-amber-400 bg-amber-500/20' : 'text-zinc-400 hover:text-zinc-200'"
@@ -490,7 +554,7 @@
       <!-- Main Reader / Media Area -->
       <div class="flex-1 w-full h-full relative overflow-hidden flex items-center justify-center">
         
-        <!-- Video Player View (When opening a video file) -->
+        <!-- 1. Video Player View (When opening a video file) -->
         <div v-if="currentComic?.type === 'video'" class="w-full h-full flex items-center justify-center bg-black relative">
           <!-- Top Screen Tap Zone for Video HUD -->
           <div 
@@ -511,7 +575,54 @@
           </video>
         </div>
 
-        <!-- Paged Mode Viewport (Single or Dual Page Image) -->
+        <!-- 2. Novel / Ebook Text Reader View -->
+        <div 
+          v-else-if="currentComic?.type === 'book'" 
+          :class="`novel-theme-${novelTheme}`"
+          class="novel-reader-viewport w-full h-full relative"
+          @click="toggleHud"
+        >
+          <div class="novel-content-container" :style="{ fontSize: `${novelFontSize}px` }">
+            <!-- Chapter Title -->
+            <h1 class="novel-chapter-title text-2xl md:text-3xl text-center">
+              {{ currentComic?.chapters[novelChapterIndex]?.title }}
+            </h1>
+
+            <!-- Chapter Content Paragraphs -->
+            <div class="space-y-4">
+              <p 
+                v-for="(para, pIdx) in currentComic?.chapters[novelChapterIndex]?.paragraphs" 
+                :key="pIdx" 
+                class="novel-paragraph"
+              >
+                {{ para }}
+              </p>
+            </div>
+
+            <!-- Chapter Footer Navigation -->
+            <div class="flex items-center justify-between pt-12 mt-12 border-t border-zinc-700/30">
+              <button 
+                @click.stop="goToNovelChapter(novelChapterIndex - 1)" 
+                :disabled="novelChapterIndex <= 0"
+                class="px-4 py-2 bg-black/20 hover:bg-black/30 disabled:opacity-30 rounded-xl text-sm font-semibold transition-colors"
+              >
+                ← {{ t('prevPageTitle') }}
+              </button>
+              <span class="text-xs opacity-75 font-mono">
+                {{ novelChapterIndex + 1 }} / {{ currentComic?.total_chapters }}
+              </span>
+              <button 
+                @click.stop="goToNovelChapter(novelChapterIndex + 1)" 
+                :disabled="novelChapterIndex >= (currentComic?.total_chapters || 1) - 1"
+                class="px-4 py-2 bg-black/20 hover:bg-black/30 disabled:opacity-30 rounded-xl text-sm font-semibold transition-colors"
+              >
+                {{ t('nextPageTitle') }} →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Comic Paged Mode Viewport (Single or Dual Page Image) -->
         <div v-else-if="readingMode === 'paged'" class="reader-viewport w-full h-full relative">
           <!-- Single Page View -->
           <div v-if="!isDoublePage" class="reader-image-container relative w-full h-full flex items-center justify-center">
@@ -579,7 +690,7 @@
           </div>
         </div>
 
-        <!-- Webtoon Waterfall Continuous Scroll Mode -->
+        <!-- 4. Webtoon Waterfall Continuous Scroll Mode -->
         <div 
           v-else 
           @scroll="handleWebtoonScroll"
@@ -609,14 +720,66 @@
 
       </div>
 
-      <!-- Bottom HUD Floating Bar (Only for non-video comics) -->
+      <!-- Bottom HUD Floating Bar (Only for non-video comics and novels) -->
       <div 
         v-if="currentComic?.type !== 'video'"
         :class="{ 'hud-bottom-hidden': !showHud }" 
         class="hud-bar absolute bottom-0 left-0 right-0 z-40 bg-zinc-950/85 backdrop-blur-md border-t border-zinc-800/80 px-4 py-3 flex flex-col gap-2"
       >
-        <!-- Page Slider & Jump -->
-        <div class="flex items-center gap-3 max-w-2xl mx-auto w-full">
+        <!-- For Novels: Chapter Slider & TOC -->
+        <div v-if="currentComic?.type === 'book'" class="flex items-center gap-3 max-w-2xl mx-auto w-full">
+          <button 
+            @click.stop="goToNovelChapter(novelChapterIndex - 1)" 
+            :disabled="novelChapterIndex <= 0"
+            class="p-2 text-zinc-300 disabled:opacity-30 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+            :title="t('prevPageTitle')"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+
+          <span class="text-xs text-zinc-400 w-12 text-right font-mono select-none">
+            {{ novelChapterIndex + 1 }}
+          </span>
+
+          <input 
+            type="range" 
+            min="0" 
+            :max="Math.max(0, (currentComic?.total_chapters || 1) - 1)" 
+            :value="novelChapterIndex"
+            @input="goToNovelChapter(parseInt($event.target.value))"
+            class="flex-1 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+          >
+
+          <span class="text-xs text-zinc-400 w-12 text-left font-mono select-none">{{ currentComic?.total_chapters }}</span>
+
+          <button 
+            @click.stop="goToNovelChapter(novelChapterIndex + 1)" 
+            :disabled="novelChapterIndex >= (currentComic?.total_chapters || 1) - 1"
+            class="p-2 text-zinc-300 disabled:opacity-30 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+            :title="t('nextPageTitle')"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
+
+          <!-- TOC Drawer Toggle -->
+          <button 
+            @click="showThumbnailDrawer = !showThumbnailDrawer"
+            :class="showThumbnailDrawer ? 'text-blue-400 bg-blue-500/20' : 'text-zinc-400 hover:text-white'"
+            class="p-1.5 rounded-lg transition-colors ml-1"
+            :title="t('tocTitle')"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- For Comics: Page Slider & Jump -->
+        <div v-else class="flex items-center gap-3 max-w-2xl mx-auto w-full">
           <!-- Previous Page Button -->
           <button 
             @click.stop="onLeftZoneClick" 
@@ -669,9 +832,26 @@
           </button>
         </div>
 
-        <!-- Thumbnail Strip Drawer -->
+        <!-- TOC Drawer for Novel Chapters -->
         <div 
-          v-if="showThumbnailDrawer" 
+          v-if="showThumbnailDrawer && currentComic?.type === 'book'" 
+          class="flex flex-col gap-1 overflow-y-auto max-h-56 py-2 px-3 max-w-2xl mx-auto w-full bg-zinc-900/90 rounded-xl border border-zinc-800 scrollbar-thin"
+        >
+          <div 
+            v-for="(c, cIdx) in currentComic?.chapters" 
+            :key="cIdx"
+            @click="goToNovelChapter(cIdx)"
+            :class="cIdx === novelChapterIndex ? 'bg-blue-600/30 text-blue-400 border border-blue-500/50 font-bold' : 'text-zinc-300 hover:bg-zinc-800'"
+            class="p-2 rounded-lg text-xs cursor-pointer flex items-center justify-between transition-colors"
+          >
+            <span class="truncate">{{ c.title }}</span>
+            <span class="text-[10px] text-zinc-500 font-mono shrink-0 ml-2">{{ c.paragraphs.length }} 段</span>
+          </div>
+        </div>
+
+        <!-- Thumbnail Strip Drawer for Comics -->
+        <div 
+          v-else-if="showThumbnailDrawer && currentComic?.type !== 'book'" 
           class="thumb-strip flex gap-2 overflow-x-auto py-2 px-1 max-w-3xl mx-auto w-full scrollbar-thin"
         >
           <div 
