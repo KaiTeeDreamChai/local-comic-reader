@@ -32,6 +32,8 @@ createApp({
     const currentPageIndex = ref(0);
     const readingMode = ref('paged'); // 'paged' | 'scroll'
     const readingDirection = ref('ltr'); // 'ltr' (left to right) | 'rtl' (right to left)
+    const pageSpread = ref(localStorage.getItem('comic_page_spread') || 'single'); // 'single' | 'double'
+    const isWideOrLandscape = ref(false);
     const showHud = ref(true);
     const showThumbnailDrawer = ref(false);
     const isFullscreen = ref(false);
@@ -41,6 +43,32 @@ createApp({
 
     let touchController = null;
     let hudTimer = null;
+
+    // Detect Desktop or Mobile Landscape
+    const updateScreenOrientation = () => {
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const isDesktop = window.innerWidth >= 768;
+      isWideOrLandscape.value = isLandscape || isDesktop;
+    };
+
+    const isDoublePage = computed(() => {
+      return readingMode.value === 'paged' && isWideOrLandscape.value && pageSpread.value === 'double';
+    });
+
+    const currentPairIndex = computed(() => {
+      if (!isDoublePage.value || !currentComic.value) return null;
+      const p2 = currentPageIndex.value + 1;
+      return p2 < currentComic.value.total_pages ? p2 : null;
+    });
+
+    const togglePageSpread = () => {
+      pageSpread.value = pageSpread.value === 'single' ? 'double' : 'single';
+      saveSettings();
+      if (touchController) {
+        touchController.resetZoom();
+      }
+      preloadPages();
+    };
 
     // Toggle Weak Network Optimization Mode
     const toggleWeakNetworkMode = () => {
@@ -64,11 +92,14 @@ createApp({
       if (savedMode) readingMode.value = savedMode;
       const savedDir = localStorage.getItem('comic_reading_dir');
       if (savedDir) readingDirection.value = savedDir;
+      const savedSpread = localStorage.getItem('comic_page_spread');
+      if (savedSpread) pageSpread.value = savedSpread;
     };
 
     const saveSettings = () => {
       localStorage.setItem('comic_reading_mode', readingMode.value);
       localStorage.setItem('comic_reading_dir', readingDirection.value);
+      localStorage.setItem('comic_page_spread', pageSpread.value);
     };
 
     // Filtered Comics & Folders
@@ -342,13 +373,15 @@ createApp({
 
     const prevPageInternal = () => {
       if (currentPageIndex.value > 0) {
-        goToPage(currentPageIndex.value - 1);
+        const step = isDoublePage.value ? 2 : 1;
+        goToPage(Math.max(0, currentPageIndex.value - step));
       }
     };
 
     const nextPageInternal = () => {
       if (currentComic.value && currentPageIndex.value < currentComic.value.total_pages - 1) {
-        goToPage(currentPageIndex.value + 1);
+        const step = isDoublePage.value ? 2 : 1;
+        goToPage(Math.min(currentComic.value.total_pages - 1, currentPageIndex.value + step));
       }
     };
 
@@ -357,10 +390,10 @@ createApp({
       const cur = currentPageIndex.value;
       const total = currentComic.value.total_pages;
 
-      // Weak network mode aggressively preloads 4 forward and 2 backward
+      // In dual page mode, preload next 6 and prev 2 pages
       const targets = weakNetworkMode.value
-        ? [cur, cur + 1, cur + 2, cur + 3, cur + 4, cur - 1, cur - 2].filter(idx => idx >= 0 && idx < total)
-        : [cur, cur + 1, cur + 2, cur - 1].filter(idx => idx >= 0 && idx < total);
+        ? [cur, cur + 1, cur + 2, cur + 3, cur + 4, cur + 5, cur - 1, cur - 2].filter(idx => idx >= 0 && idx < total)
+        : [cur, cur + 1, cur + 2, cur + 3, cur - 1].filter(idx => idx >= 0 && idx < total);
 
       targets.forEach(idx => {
         const pageUrl = getPageUrl(idx);
@@ -521,6 +554,12 @@ createApp({
         case 'M':
           toggleReadingMode();
           break;
+        case 'd':
+        case 'D':
+          if (isWideOrLandscape.value && readingMode.value === 'paged') {
+            togglePageSpread();
+          }
+          break;
         case 'Escape':
           if (showThumbnailDrawer.value) {
             showThumbnailDrawer.value = false;
@@ -533,6 +572,10 @@ createApp({
 
     onMounted(async () => {
       loadSettings();
+      updateScreenOrientation();
+      window.addEventListener('resize', updateScreenOrientation);
+      window.addEventListener('orientationchange', updateScreenOrientation);
+
       await fetchSystemInfo();
       await fetchSystemDrives();
       await loadLibrary();
@@ -545,6 +588,8 @@ createApp({
 
     onUnmounted(() => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', updateScreenOrientation);
+      window.removeEventListener('orientationchange', updateScreenOrientation);
       if (touchController) touchController.destroy();
       if (hudTimer) clearTimeout(hudTimer);
     });
@@ -576,6 +621,11 @@ createApp({
       getPageUrl,
       readingMode,
       readingDirection,
+      pageSpread,
+      isWideOrLandscape,
+      isDoublePage,
+      currentPairIndex,
+      togglePageSpread,
       showHud,
       showThumbnailDrawer,
       isFullscreen,

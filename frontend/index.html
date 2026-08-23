@@ -352,9 +352,10 @@
               {{ currentComic?.title }}
             </h2>
             <div class="text-[11px] text-zinc-400 flex items-center gap-2">
-              <span>第 {{ currentPageIndex + 1 }} / {{ currentComic?.total_pages }} 页</span>
+              <span v-if="!isDoublePage">第 {{ currentPageIndex + 1 }} / {{ currentComic?.total_pages }} 页</span>
+              <span v-else>第 {{ currentPageIndex + 1 }}<template v-if="currentPairIndex !== null">-{{ currentPairIndex + 1 }}</template> / {{ currentComic?.total_pages }} 页</span>
               <span class="text-zinc-600">•</span>
-              <span>{{ readingMode === 'paged' ? (readingDirection === 'rtl' ? '日漫(RTL)' : '分页(LTR)') : '条漫' }}</span>
+              <span>{{ readingMode === 'paged' ? (isDoublePage ? (readingDirection === 'rtl' ? '双页日漫(RTL)' : '双页(LTR)') : (readingDirection === 'rtl' ? '日漫(RTL)' : '单页(LTR)')) : '条漫' }}</span>
             </div>
           </div>
         </div>
@@ -374,6 +375,23 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
             <span class="hidden sm:inline">{{ readingMode === 'paged' ? '分页' : '条漫' }}</span>
+          </button>
+
+          <!-- Dual Page Spread Toggle (Visible on Desktop or Mobile Landscape) -->
+          <button 
+            v-if="isWideOrLandscape && readingMode === 'paged'"
+            @click="togglePageSpread" 
+            :title="pageSpread === 'double' ? '当前双页并排显示，点击切换单页' : '当前单页显示，点击切换双页并排'"
+            class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-1 text-xs"
+            :class="{ 'text-blue-400 bg-blue-500/20 font-semibold': isDoublePage }"
+          >
+            <svg v-if="pageSpread === 'double'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <span class="hidden sm:inline">{{ pageSpread === 'double' ? '双页' : '单页' }}</span>
           </button>
 
           <!-- RTL / LTR Direction toggle for paged mode -->
@@ -432,7 +450,7 @@
       <!-- Main Reader Area -->
       <div class="flex-1 w-full h-full relative overflow-hidden flex items-center justify-center">
         
-        <!-- Paged Mode Viewport -->
+        <!-- Paged Mode Viewport (Single or Dual Page) -->
         <div v-if="readingMode === 'paged'" class="reader-viewport w-full h-full">
           <!-- Top Screen Tap Zone: Click or tap top area to pop up top HUD with Exit button -->
           <div 
@@ -441,13 +459,41 @@
             title="点击顶部呼出菜单与退出按钮"
           ></div>
 
-          <div class="reader-image-container">
+          <!-- Single Page View -->
+          <div v-if="!isDoublePage" class="reader-image-container">
             <img 
               v-if="currentComic?.pages[currentPageIndex]"
               :src="getPageUrl(currentPageIndex)" 
               :alt="`Page ${currentPageIndex + 1}`" 
               class="reader-img"
             >
+          </div>
+
+          <!-- Dual Page Spread View (Side-by-side) -->
+          <div 
+            v-else 
+            class="reader-image-container reader-dual-container"
+            :class="{ 'flex-row-reverse': readingDirection === 'rtl' }"
+          >
+            <!-- First Page (Page N in LTR: left, in RTL: right) -->
+            <div class="reader-dual-page">
+              <img 
+                v-if="currentComic?.pages[currentPageIndex]"
+                :src="getPageUrl(currentPageIndex)" 
+                :alt="`Page ${currentPageIndex + 1}`" 
+                class="reader-img"
+              >
+            </div>
+
+            <!-- Second Page (Page N+1 in LTR: right, in RTL: left) -->
+            <div v-if="currentPairIndex !== null" class="reader-dual-page">
+              <img 
+                v-if="currentComic?.pages[currentPairIndex]"
+                :src="getPageUrl(currentPairIndex)" 
+                :alt="`Page ${currentPairIndex + 1}`" 
+                class="reader-img"
+              >
+            </div>
           </div>
         </div>
 
@@ -498,7 +544,9 @@
             </svg>
           </button>
 
-          <span class="text-xs text-zinc-400 w-10 text-right font-mono">{{ currentPageIndex + 1 }}</span>
+          <span class="text-xs text-zinc-400 w-14 text-right font-mono">
+            {{ isDoublePage ? (currentPageIndex + 1 + (currentPairIndex !== null ? '-' + (currentPairIndex + 1) : '')) : (currentPageIndex + 1) }}
+          </span>
 
           <input 
             type="range" 

@@ -70,6 +70,33 @@ html, body {
   -webkit-user-drag: none;
 }
 
+/* Dual Page Side-by-side View */
+.reader-dual-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.reader-dual-page {
+  flex: 1 1 50%;
+  max-width: 50%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.reader-dual-page .reader-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 /* Webtoon Continuous Scroll */
 .webtoon-scroll-container {
   width: 100%;
