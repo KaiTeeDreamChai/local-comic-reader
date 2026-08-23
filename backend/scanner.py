@@ -180,6 +180,9 @@ class LibraryScanner:
                         "page_count": page_count,
                         "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0" if page_count > 0 else None
                     })
+            except Exception as e:
+                pass
+
         # If the directory directly contains loose images and no sub-comics/folders, present it as a comic album
         image_files = [e for e in entries if e.is_file() and e.suffix.lower() in IMAGE_EXTENSIONS]
         if image_files and len(folders) == 0 and len(comics) == 0:
