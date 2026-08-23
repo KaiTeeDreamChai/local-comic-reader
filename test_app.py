@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import shutil
@@ -99,5 +100,12 @@ for comic in data_sub["comics"]:
     res_thumb = client.get(f"/api/comic/thumbnail?comic_id={c_id}&page_index=0")
     assert res_thumb.status_code == 200
     assert len(res_thumb.content) > 100
+
+    # Test download comic as zip
+    res_dl = client.get(f"/api/comic/download?comic_id={c_id}")
+    assert res_dl.status_code == 200, f"Download failed for {info['title']}: {res_dl.text}"
+    assert "attachment" in res_dl.headers.get("content-disposition", "")
+    assert zipfile.is_zipfile(io.BytesIO(res_dl.content)), f"Downloaded payload is not a valid zip for {info['title']}"
+    print(f"✓ ZIP download verified for '{info['title']}' ({len(res_dl.content)} bytes)")
 
 print("\n🎉 ALL TESTS PASSED SUCCESSFULLY!")

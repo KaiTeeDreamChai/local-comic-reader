@@ -268,6 +268,26 @@ createApp({
       }
     };
 
+    // Comic Download
+    const downloadingComics = ref(new Set());
+
+    const downloadComic = (comic) => {
+      if (downloadingComics.value.has(comic.id)) return;
+      downloadingComics.value.add(comic.id);
+
+      const downloadUrl = `/api/comic/download?comic_id=${comic.id}`;
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `${comic.name || comic.title || 'comic'}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setTimeout(() => {
+        downloadingComics.value.delete(comic.id);
+      }, 3000);
+    };
+
     // Reader Navigation & Preloading
     const goToPage = (index) => {
       if (!currentComic.value) return;
@@ -526,6 +546,8 @@ createApp({
       handleDeleteBookshelf,
       openComic,
       closeReader,
+      downloadComic,
+      downloadingComics,
       goHome,
       goBack,
       goToPage,

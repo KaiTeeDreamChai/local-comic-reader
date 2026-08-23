@@ -261,6 +261,21 @@
                     <span class="text-xs">无封面</span>
                   </div>
 
+                  <!-- Floating Download Button on Card -->
+                  <button 
+                    @click.stop="downloadComic(comic)" 
+                    :title="`下载《${comic.name}》ZIP压缩包`"
+                    class="absolute top-2 left-2 p-1.5 bg-black/75 hover:bg-blue-600 active:scale-90 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow-md transition-all duration-150 z-10"
+                  >
+                    <svg v-if="!downloadingComics.has(comic.id)" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    <svg v-else class="w-3.5 h-3.5 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                  </button>
+
                   <!-- Type Badge -->
                   <div class="absolute top-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
                     {{ comic.type === 'pdf' ? 'PDF' : (comic.type === 'archive' ? 'ZIP' : '文件夹') }}
@@ -364,6 +379,21 @@
             </svg>
             <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+
+          <!-- Download ZIP in Reader -->
+          <button 
+            @click="downloadComic(currentComic)" 
+            :title="`下载当前漫画 (${currentComic?.title}.zip)`"
+            class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+          >
+            <svg v-if="!downloadingComics.has(currentComic?.id)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            <svg v-else class="w-4 h-4 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
           </button>
         </div>

@@ -1,15 +1,26 @@
+import io
 import os
 import sys
+import zipfile
 from pathlib import Path
 from typing import Optional, List, Dict, Any
+from urllib.parse import quote
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from .config import load_config, save_config, add_bookshelf, remove_bookshelf
-from .utils import encode_path, decode_path, get_local_ips
+from .utils import (
+    encode_path,
+    decode_path,
+    get_local_ips,
+    ARCHIVE_EXTENSIONS,
+    IMAGE_EXTENSIONS,
+    PDF_EXTENSIONS,
+    natural_sort_key
+)
 from .reader import ComicReader
 from .scanner import LibraryScanner
 
@@ -210,6 +221,61 @@ def get_comic_thumbnail(comic_id: str = Query(...), page_index: int = Query(0), 
         )
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/api/comic/download")
+def download_comic(comic_id: str = Query(...)):
+    """Download the comic / album as a zip file to the client."""
+    try:
+        file_path_str = decode_path(comic_id)
+        target = Path(file_path_str)
+        if not target.exists():
+            raise HTTPException(status_code=404, detail="漫画文件或目录不存在")
+
+        filename = f"{target.stem if target.is_file() else target.name}.zip"
+        encoded_filename = quote(filename)
+
+        # If already a zip or cbz, stream file directly with zip extension
+        if target.is_file() and target.suffix.lower() in ARCHIVE_EXTENSIONS:
+            return FileResponse(
+                path=str(target),
+                media_type="application/zip",
+                filename=filename,
+                headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
+            )
+
+        # If it's a folder of images or a PDF, pack into a ZIP archive
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            if target.is_dir():
+                img_files = [
+                    e for e in target.iterdir()
+                    if e.is_file() and e.suffix.lower() in IMAGE_EXTENSIONS and not e.name.startswith(".")
+                ]
+                img_files.sort(key=lambda x: natural_sort_key(x.name))
+                for f in img_files:
+                    zf.write(str(f), arcname=f.name)
+            elif target.is_file() and target.suffix.lower() in PDF_EXTENSIONS:
+                import pymupdf as fitz
+                doc = fitz.open(str(target))
+                for i in range(len(doc)):
+                    page = doc.load_page(i)
+                    pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0), alpha=False)
+                    img_bytes = pix.tobytes("jpeg")
+                    zf.writestr(f"page_{i+1:04d}.jpg", img_bytes)
+                doc.close()
+
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                "Content-Length": str(buf.getbuffer().nbytes)
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"打包下载失败: {str(e)}")
 
 
 # Serve static frontend files
