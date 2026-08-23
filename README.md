@@ -14,6 +14,7 @@
 
 1. **多格式无缝支持与动图/视频/电子书**：
    - **📚 小说与电子书全面适配**：`.txt`, `.epub`, `.mobi`, `.azw3`, `.md`, `.log`, `.srt`（自动识别 UTF-8 / GBK / GB18030 等各种编码，智能识别章节目录生成目录跳转，支持**日间明亮 / 护眼羊皮纸 / 清新青草 / 夜间深黑**等多种配色，自由调节字体大小）。
+   - **🔖 书签收藏与无感记忆续读**：支持在阅读小说时一键为任意章节添加/管理书签，并附带段落预览与添加时间；自动实时记忆上次阅读的具体章节与滚动位置，再次打开时**无感自动跳转并精确定位至上次读到的地方**。
    - **漫画画册与动图**：`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif` (动态GIF流畅播放), `.bmp`, `.avif`
    - **压缩包漫画**：`.zip`, `.cbz`（无需手动解压，极速在线解包读取）
    - **PDF 漫画/画册**：`.pdf`（基于 PyMuPDF 引擎，高精度实时渲染单页为高清 WebP）
@@ -112,6 +113,7 @@ A lightweight, high-performance local comic, manga, novel, album and media web r
 ### 🌟 Key Highlights
 
 - **Multi-Format & Ebook Reader**: Supports `.txt`, `.epub`, `.mobi`, `.azw3`, `.md` (with chapter auto-splitting, TOC navigation, Day / Sepia / Green / Night dark themes, and adjustable font sizes).
+- **🔖 Bookmark & Auto-Resume Position**: Easily bookmark any chapter with snippets and timestamps; automatically remembers your exact reading chapter and scroll position, resuming effortlessly when reopened.
 - **Comics & Media Playback**: Supports `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif` (animated GIF playback), `.bmp`, `.avif`, `.zip`, `.cbz`, `.pdf` (high-DPI PyMuPDF render), and popular videos `.mp4`, `.mkv`, `.webm`, `.avi`, `.mov`, `.flv`, `.wmv`, `.m4v`, `.ts` (with auto 1st frame cover and HTTP Range chunk streaming).
 - **Natural Alphanumeric Sorting**: Proper sorting for numbered pages (`1, 2, 10, 100`).
 - **Bookshelf Boundary Sandbox**: Strict directory boundary enforcement to prevent navigating outside configured bookshelves.

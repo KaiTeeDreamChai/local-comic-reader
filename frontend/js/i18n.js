@@ -87,6 +87,12 @@ const i18n = {
     themeNight: '夜间深黑',
     themeGreen: '青草清新',
     themeMode: '阅读配色',
+    bookmarkToggle: '添加/移除书签',
+    bookmarkList: '书签列表',
+    noBookmarks: '暂无书签，点击上方书签图标可将本章加入书签',
+    addBookmark: '添加书签',
+    removeBookmark: '删除书签',
+    autoProgressLoaded: '已自动跳转至上次阅读位置',
 
     // Video Player
     videoUnsupported: '您的浏览器暂不支持播放此视频格式，请尝试下载后播放。',
@@ -217,6 +223,12 @@ const i18n = {
     themeNight: 'Night Dark',
     themeGreen: 'Soft Green',
     themeMode: 'Color Theme',
+    bookmarkToggle: 'Add/Remove Bookmark',
+    bookmarkList: 'Bookmarks',
+    noBookmarks: 'No bookmarks yet. Tap the bookmark icon to bookmark this chapter',
+    addBookmark: 'Add Bookmark',
+    removeBookmark: 'Remove Bookmark',
+    autoProgressLoaded: 'Auto-resumed from previous position',
 
     // Video Player
     videoUnsupported: 'Your browser cannot play this video directly. Please download the file to watch.',
