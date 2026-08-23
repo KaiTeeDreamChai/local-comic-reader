@@ -576,6 +576,7 @@ createApp({
       toggleReadingDirection: comicReader.toggleReadingDirection,
       togglePageSpread: comicReader.togglePageSpread,
       handleWebtoonScroll: comicReader.handleWebtoonScroll,
+      onWebtoonImageLoad: comicReader.onWebtoonImageLoad,
 
       // Novel Reader (Spread from novelReader module)
       novelFontSize: novelReader.novelFontSize,

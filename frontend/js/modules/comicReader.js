@@ -180,6 +180,18 @@ function useComicReader(currentComic, currentPageIndex, weakNetworkMode, t) {
     }
   };
 
+  const onWebtoonImageLoad = (event, index) => {
+    const img = event.target;
+    if (img && img.naturalWidth && img.naturalHeight) {
+      // Check if image is landscape / wide artbook page (width > height)
+      if (img.naturalWidth > img.naturalHeight) {
+        img.classList.add('is-landscape');
+      } else {
+        img.classList.remove('is-landscape');
+      }
+    }
+  };
+
   return {
     readingMode,
     readingDirection,
@@ -208,7 +220,8 @@ function useComicReader(currentComic, currentPageIndex, weakNetworkMode, t) {
     toggleReadingMode,
     toggleReadingDirection,
     onLeftZoneClick,
-    onRightZoneClick
+    onRightZoneClick,
+    onWebtoonImageLoad
   };
 };
 
