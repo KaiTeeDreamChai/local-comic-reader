@@ -757,6 +757,30 @@
             </svg>
           </button>
 
+          <!-- Video Quick Seek Actions (-10s / +10s) -->
+          <template v-if="currentComic?.type === 'video'">
+            <button 
+              @click="seekVideo(-10)" 
+              title="快退 10 秒"
+              class="px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"></path>
+              </svg>
+              <span>-10s</span>
+            </button>
+            <button 
+              @click="seekVideo(10)" 
+              title="快进 10 秒"
+              class="px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+            >
+              <span>+10s</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 005 8v8a1 1 0 001.6.8l5.334-4zM19.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.334-4z"></path>
+              </svg>
+            </button>
+          </template>
+
           <!-- Weak Network Toggle in Reader HUD (for comics/videos) -->
           <button 
             v-if="currentComic?.type !== 'book'"
@@ -776,7 +800,7 @@
       <div class="flex-1 w-full h-full relative overflow-hidden flex items-center justify-center">
         
         <!-- 1. Video Player View (When opening a video file) -->
-        <div v-if="currentComic?.type === 'video'" class="w-full h-full flex items-center justify-center bg-black relative p-2 md:p-6 pt-16 md:pt-16 pb-4">
+        <div v-if="currentComic?.type === 'video'" class="w-full h-full flex items-center justify-center bg-black relative px-2 sm:px-6 pt-16 pb-20 sm:pb-8">
           <!-- Top Screen Tap Zone for Video HUD -->
           <div 
             @click.stop="showHud = true" 
@@ -786,13 +810,14 @@
 
           <div class="w-full h-full flex items-center justify-center relative overflow-hidden">
             <video 
+              id="main-video-player"
               :src="currentComic.video_url" 
               controls 
               autoplay 
               playsinline 
               webkit-playsinline
               class="w-auto h-auto max-w-full max-h-full object-contain rounded-xl shadow-2xl focus:outline-none"
-              style="max-height: calc(100vh - 4.5rem); max-width: 100vw;"
+              style="max-height: calc(100vh - 9rem); max-width: 100vw; margin-bottom: env(safe-area-inset-bottom, 1rem);"
               :preload="weakNetworkMode ? 'metadata' : 'auto'"
             >
               <p class="text-zinc-400 text-sm p-4">{{ t('videoUnsupported') }}</p>
@@ -1518,11 +1543,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.1.0"></script>
-  <script src="/static/js/touch.js?v=1.1.0"></script>
-  <script src="/static/js/modules/api.js?v=1.1.0"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.1.0"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.1.0"></script>
-  <script src="/static/js/app.js?v=1.1.0"></script>
+  <script src="/static/js/i18n.js?v=1.1.1"></script>
+  <script src="/static/js/touch.js?v=1.1.1"></script>
+  <script src="/static/js/modules/api.js?v=1.1.1"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.1.1"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.1.1"></script>
+  <script src="/static/js/app.js?v=1.1.1"></script>
 </body>
 </html>

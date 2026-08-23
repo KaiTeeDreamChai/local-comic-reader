@@ -304,6 +304,13 @@ createApp({
       currentComic.value = null;
     };
 
+    const seekVideo = (seconds) => {
+      const videoEl = document.getElementById('main-video-player') || document.querySelector('video');
+      if (videoEl) {
+        videoEl.currentTime = Math.max(0, Math.min(videoEl.duration || 0, videoEl.currentTime + seconds));
+      }
+    };
+
     // 10. Navigation Bar Actions
     const goHome = () => {
       if (viewMode.value === 'reader') {
@@ -529,6 +536,7 @@ createApp({
       handleDeleteBookshelf,
       openComic,
       closeReader,
+      seekVideo,
       goHome,
       goBack,
       goParent,
