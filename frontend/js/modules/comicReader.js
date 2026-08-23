@@ -2,8 +2,8 @@
 const { ref, computed, nextTick } = Vue;
 
 function useComicReader(currentComic, currentPageIndex, weakNetworkMode, t) {
-  const readingMode = ref('paged'); // 'paged' | 'scroll'
-  const readingDirection = ref('ltr'); // 'ltr' | 'rtl'
+  const readingMode = ref(localStorage.getItem('comic_reading_mode') || 'paged'); // 'paged' | 'scroll'
+  const readingDirection = ref(localStorage.getItem('comic_reading_direction') || 'ltr'); // 'ltr' | 'rtl'
   const pageSpread = ref(localStorage.getItem('comic_page_spread') || 'single'); // 'single' | 'double'
   const isWideOrLandscape = ref(false);
   const showHud = ref(true);

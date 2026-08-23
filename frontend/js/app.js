@@ -52,11 +52,16 @@ createApp({
       currentLang.value = lang;
       localStorage.setItem('comic_lang', lang);
       document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
-    };
-
     // 7. Compose Submodules
     const novelReader = window.useNovelReader(currentComic, currentPageIndex);
     const comicReader = window.useComicReader(currentComic, currentPageIndex, weakNetworkMode, t);
+
+    const saveSettings = () => {
+      if (comicReader) {
+        localStorage.setItem('comic_reading_mode', comicReader.readingMode.value);
+        localStorage.setItem('comic_reading_direction', comicReader.readingDirection.value);
+      }
+    };
 
     let touchController = null;
 
@@ -433,6 +438,7 @@ createApp({
       currentLang,
       t,
       setLanguage,
+      saveSettings,
 
       // Comic Reader (Spread from comicReader module)
       currentComic,
