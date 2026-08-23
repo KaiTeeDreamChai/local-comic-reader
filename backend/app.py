@@ -165,9 +165,11 @@ def browse_library(path: Optional[str] = Query(None), encoded_path: Optional[str
         res["is_root"] = False
         return res
     except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail="该目录不存在、已被移动或无权限访问")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail="该目录路径无效或不可用")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"访问目录出错: {str(e)}")
 
 
 @app.get("/api/comic/details")

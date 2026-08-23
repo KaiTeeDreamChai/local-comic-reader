@@ -26,7 +26,11 @@ def encode_path(path_str: str) -> str:
 
 def decode_path(encoded_str: str) -> str:
     """Decode URL-safe base64 string to original path."""
-    return base64.urlsafe_b64decode(encoded_str.encode('utf-8')).decode('utf-8')
+    try:
+        padded = encoded_str + '=' * (-len(encoded_str) % 4)
+        return base64.urlsafe_b64decode(padded.encode('utf-8')).decode('utf-8')
+    except Exception as e:
+        raise ValueError(f"无效或不可用的路径编码: {str(e)}")
 
 
 def get_local_ips() -> List[str]:

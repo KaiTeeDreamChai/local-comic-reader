@@ -139,17 +139,29 @@ createApp({
       }
     };
 
+    // Navigation History Stack
+    const navHistory = ref([]);
+    const currentEncodedPath = ref('');
+
     // Load Library (Root or Subpath)
-    const loadLibrary = async (encodedPath = '') => {
+    const loadLibrary = async (encodedPath = '', isFromHistory = false) => {
       loading.value = true;
       errorMsg.value = '';
       try {
+        if (!isFromHistory && currentEncodedPath.value !== encodedPath) {
+          navHistory.value.push(currentEncodedPath.value);
+          if (navHistory.value.length > 50) navHistory.value.shift();
+        }
+
         const url = encodedPath ? `/api/library/browse?encoded_path=${encodedPath}` : '/api/library/browse';
         const res = await fetch(url);
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.detail || '加载目录失败');
+        if (!res.ok) {
+          throw new Error(data.detail || '该目录不可用或路径无效');
+        }
 
+        currentEncodedPath.value = encodedPath;
         isRoot.value = !!data.is_root;
         if (data.is_root) {
           bookshelves.value = data.bookshelves || [];
@@ -162,7 +174,7 @@ createApp({
           updateBreadcrumbs(data);
         }
       } catch (e) {
-        errorMsg.value = e.message;
+        errorMsg.value = e.message || '该目录不可用或已被移动/删除';
       } finally {
         loading.value = false;
       }
@@ -173,11 +185,7 @@ createApp({
       const parts = data.current_path.split(sep).filter(Boolean);
       
       const crumbs = [{ name: '首页', encoded_path: '' }];
-      // Build step-by-step crumbs
       let accumulated = '';
-      if (sep === '/' && data.current_path.startsWith('/')) {
-        accumulated = '';
-      }
       
       parts.forEach((p, idx) => {
         if (sep === '/' && idx === 0 && !data.current_path.startsWith('/')) {
@@ -194,7 +202,6 @@ createApp({
         });
       });
 
-      // Simple breadcrumbs fallback if too long: home + parent + current
       breadcrumbs.value = crumbs;
     };
 
@@ -266,7 +273,6 @@ createApp({
         showThumbnailDrawer.value = false;
         loadedPages.value.clear();
 
-        // Reset auto hide timer for HUD
         resetHudTimer();
 
         await nextTick();
@@ -292,7 +298,7 @@ createApp({
       currentComic.value = null;
     };
 
-    // Quick Bottom-Left Navigation
+    // Quick Navigation Toolbar (Back to last page, Parent folder, Bookshelf Root)
     const goHome = () => {
       if (viewMode.value === 'reader') {
         closeReader();
@@ -306,13 +312,45 @@ createApp({
         closeReader();
         return;
       }
+      if (navHistory.value.length > 0) {
+        const prev = navHistory.value.pop();
+        loadLibrary(prev, true);
+      } else if (!isRoot.value) {
+        loadLibrary('');
+      }
+    };
+
+    const goParent = () => {
+      if (viewMode.value === 'reader') {
+        closeReader();
+        return;
+      }
       if (!isRoot.value) {
-        if (breadcrumbs.value && breadcrumbs.value.length > 1) {
-          const prevCrumb = breadcrumbs.value[breadcrumbs.value.length - 2];
-          loadLibrary(prevCrumb.encoded_path);
+        if (currentDirectory.value && currentDirectory.value.encoded_parent_path) {
+          loadLibrary(currentDirectory.value.encoded_parent_path);
+        } else if (breadcrumbs.value && breadcrumbs.value.length > 1) {
+          const parentCrumb = breadcrumbs.value[breadcrumbs.value.length - 2];
+          loadLibrary(parentCrumb.encoded_path);
         } else {
           loadLibrary('');
         }
+      }
+    };
+
+    // Paged Reading Click Zones
+    const onLeftZoneClick = () => {
+      if (readingDirection.value === 'rtl') {
+        nextPageInternal();
+      } else {
+        prevPageInternal();
+      }
+    };
+
+    const onRightZoneClick = () => {
+      if (readingDirection.value === 'rtl') {
+        prevPageInternal();
+      } else {
+        nextPageInternal();
       }
     };
 
@@ -499,30 +537,39 @@ createApp({
           const width = window.innerWidth;
           const height = window.innerHeight;
 
-          // 1. Single tap on the TOP 25% area -> ALWAYS show top HUD with Exit button
-          if (y < height * 0.25) {
+          // 1. Single tap on the TOP 22% area -> ALWAYS show top HUD with Exit button
+          if (y < height * 0.22) {
             showHud.value = true;
             resetHudTimer();
             return;
           }
 
-          // 2. Single tap on the BOTTOM 18% area -> ALWAYS show HUD with page slider
-          if (y > height * 0.82) {
+          // 2. Single tap on the BOTTOM 15% area -> ALWAYS show HUD with page slider
+          if (y > height * 0.85) {
             showHud.value = true;
             resetHudTimer();
             return;
           }
 
-          // 3. Left / Right / Center Tap Zones
-          const leftZone = width * 0.30;
-          const rightZone = width * 0.70;
-
-          if (x < leftZone) {
-            prevPage();
-          } else if (x > rightZone) {
-            nextPage();
+          // 3. Dual Page vs Single Page Tap Zones
+          if (isDoublePage.value) {
+            // Dual Page: Left Half (0-46%) vs Right Half (54-100%) vs Middle Seam
+            if (x < width * 0.46) {
+              onLeftZoneClick();
+            } else if (x > width * 0.54) {
+              onRightZoneClick();
+            } else {
+              toggleHud();
+            }
           } else {
-            toggleHud();
+            // Single Page: Left 20% vs Right 20% vs Center 60%
+            if (x < width * 0.20) {
+              onLeftZoneClick();
+            } else if (x > width * 0.80) {
+              onRightZoneClick();
+            } else {
+              toggleHud();
+            }
           }
         },
         onDoubleTap: () => {},
@@ -630,6 +677,7 @@ createApp({
       showThumbnailDrawer,
       isFullscreen,
       currentZoom,
+      navHistory,
       loadLibrary,
       navigateToCrumb,
       openFolder,
@@ -641,6 +689,9 @@ createApp({
       downloadingComics,
       goHome,
       goBack,
+      goParent,
+      onLeftZoneClick,
+      onRightZoneClick,
       goToPage,
       prevPage,
       nextPage,

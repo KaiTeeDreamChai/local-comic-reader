@@ -139,9 +139,16 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
             </svg>
           </div>
-          <h3 class="text-lg font-semibold text-zinc-200 mb-1">加载遇到问题</h3>
-          <p class="text-sm text-zinc-400 max-w-md mb-4">{{ errorMsg }}</p>
-          <button @click="loadLibrary(currentPath ? btoa(currentPath) : '')" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-medium">重试</button>
+          <h3 class="text-lg font-semibold text-zinc-200 mb-1">该目录不可用或无法访问</h3>
+          <p class="text-sm text-zinc-400 max-w-md mb-5">{{ errorMsg }}</p>
+          <div class="flex items-center gap-3">
+            <button @click="goBack" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-sm font-medium transition-colors">
+              返回上一个页面
+            </button>
+            <button @click="goHome" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30 transition-colors">
+              回到书架首页
+            </button>
+          </div>
         </div>
 
         <!-- Top Level Bookshelves View (Root) -->
@@ -451,16 +458,28 @@
       <div class="flex-1 w-full h-full relative overflow-hidden flex items-center justify-center">
         
         <!-- Paged Mode Viewport (Single or Dual Page) -->
-        <div v-if="readingMode === 'paged'" class="reader-viewport w-full h-full">
-          <!-- Top Screen Tap Zone: Click or tap top area to pop up top HUD with Exit button -->
-          <div 
-            @click.stop="showHud = true; resetHudTimer();" 
-            class="absolute top-0 inset-x-0 h-24 z-30 cursor-pointer pointer-events-auto"
-            title="点击顶部呼出菜单与退出按钮"
-          ></div>
-
+        <div v-if="readingMode === 'paged'" class="reader-viewport w-full h-full relative">
           <!-- Single Page View -->
-          <div v-if="!isDoublePage" class="reader-image-container">
+          <div v-if="!isDoublePage" class="reader-image-container relative w-full h-full flex items-center justify-center">
+            <!-- Left 20% Tap/Click Zone -->
+            <div 
+              @click.stop="onLeftZoneClick" 
+              class="absolute left-0 inset-y-0 w-[20%] z-20 cursor-pointer"
+              title="点击翻页 (左侧区域)"
+            ></div>
+            <!-- Center 60% Tap/Click Zone (Toggle HUD) -->
+            <div 
+              @click.stop="toggleHud" 
+              class="absolute left-[20%] right-[20%] inset-y-0 z-10 cursor-pointer"
+              title="点击呼出/收起控制栏"
+            ></div>
+            <!-- Right 20% Tap/Click Zone -->
+            <div 
+              @click.stop="onRightZoneClick" 
+              class="absolute right-0 inset-y-0 w-[20%] z-20 cursor-pointer"
+              title="点击翻页 (右侧区域)"
+            ></div>
+
             <img 
               v-if="currentComic?.pages[currentPageIndex]"
               :src="getPageUrl(currentPageIndex)" 
@@ -476,7 +495,11 @@
             :class="{ 'flex-row-reverse': readingDirection === 'rtl' }"
           >
             <!-- First Page (Page N in LTR: left, in RTL: right) -->
-            <div class="reader-dual-page">
+            <div 
+              @click.stop="readingDirection === 'rtl' ? onRightZoneClick() : onLeftZoneClick()"
+              class="reader-dual-page reader-dual-page-left"
+              :title="`第 ${currentPageIndex + 1} 页 (点击翻页)`"
+            >
               <img 
                 v-if="currentComic?.pages[currentPageIndex]"
                 :src="getPageUrl(currentPageIndex)" 
@@ -486,7 +509,12 @@
             </div>
 
             <!-- Second Page (Page N+1 in LTR: right, in RTL: left) -->
-            <div v-if="currentPairIndex !== null" class="reader-dual-page">
+            <div 
+              v-if="currentPairIndex !== null" 
+              @click.stop="readingDirection === 'rtl' ? onLeftZoneClick() : onRightZoneClick()"
+              class="reader-dual-page reader-dual-page-right"
+              :title="`第 ${currentPairIndex + 1} 页 (点击翻页)`"
+            >
               <img 
                 v-if="currentComic?.pages[currentPairIndex]"
                 :src="getPageUrl(currentPairIndex)" 
@@ -534,17 +562,19 @@
       >
         <!-- Page Slider & Jump -->
         <div class="flex items-center gap-3 max-w-2xl mx-auto w-full">
+          <!-- Previous Page Button -->
           <button 
-            @click="prevPageInternal" 
-            :disabled="currentPageIndex <= 0"
-            class="p-1.5 text-zinc-300 disabled:opacity-30 hover:text-white rounded transition-colors"
+            @click.stop="onLeftZoneClick" 
+            :disabled="readingDirection === 'rtl' ? (currentPageIndex >= (currentComic?.total_pages || 1) - 1) : (currentPageIndex <= 0)"
+            class="p-2 text-zinc-300 disabled:opacity-30 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+            title="上一页 / 翻页"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
           </button>
 
-          <span class="text-xs text-zinc-400 w-14 text-right font-mono">
+          <span class="text-xs text-zinc-400 w-14 text-right font-mono select-none">
             {{ isDoublePage ? (currentPageIndex + 1 + (currentPairIndex !== null ? '-' + (currentPairIndex + 1) : '')) : (currentPageIndex + 1) }}
           </span>
 
@@ -557,12 +587,14 @@
             class="flex-1 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
           >
 
-          <span class="text-xs text-zinc-400 w-10 text-left font-mono">{{ currentComic?.total_pages }}</span>
+          <span class="text-xs text-zinc-400 w-10 text-left font-mono select-none">{{ currentComic?.total_pages }}</span>
 
+          <!-- Next Page Button -->
           <button 
-            @click="nextPageInternal" 
-            :disabled="currentPageIndex >= (currentComic?.total_pages || 1) - 1"
-            class="p-1.5 text-zinc-300 disabled:opacity-30 hover:text-white rounded transition-colors"
+            @click.stop="onRightZoneClick" 
+            :disabled="readingDirection === 'rtl' ? (currentPageIndex <= 0) : (currentPageIndex >= (currentComic?.total_pages || 1) - 1)"
+            class="p-2 text-zinc-300 disabled:opacity-30 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+            title="下一页 / 翻页"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -764,19 +796,19 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 5. 网页左下角快捷导航 (BACK & HOME BUTTONS) -->
+    <!-- 5. 网页左下角快捷导航 (BACK, PARENT & HOME) -->
     <!-- ========================================== -->
     <div 
       class="fixed bottom-5 left-5 z-40 flex items-center gap-2 select-none transition-all duration-300"
       :class="{ 'opacity-0 pointer-events-none translate-y-4': viewMode === 'reader' && !showHud }"
     >
-      <!-- 回到上一个页面 / 上一级目录 -->
+      <!-- 1. 回到上一个访问的页面 -->
       <button 
         @click="goBack"
-        :disabled="isRoot && viewMode === 'library'"
-        :class="isRoot && viewMode === 'library' ? 'opacity-40 cursor-not-allowed bg-zinc-900/60 text-zinc-500' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
+        :disabled="isRoot && viewMode === 'library' && navHistory.length === 0"
+        :class="isRoot && viewMode === 'library' && navHistory.length === 0 ? 'opacity-40 cursor-not-allowed bg-zinc-900/60 text-zinc-500' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
         class="flex items-center gap-1.5 px-3.5 py-2.5 backdrop-blur-md border border-zinc-700/80 shadow-2xl rounded-xl text-xs font-semibold transition-all"
-        title="回到上一个页面 / 上一级目录"
+        title="返回上一个所访问的页面"
       >
         <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -784,14 +816,29 @@
         <span>返回</span>
       </button>
 
-      <!-- 回到主页 / 书架首页 -->
+      <!-- 2. 进入上一层目录 -->
+      <button 
+        v-if="viewMode === 'library'"
+        @click="goParent"
+        :disabled="isRoot"
+        :class="isRoot ? 'opacity-40 cursor-not-allowed bg-zinc-900/60 text-zinc-500' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
+        class="flex items-center gap-1.5 px-3.5 py-2.5 backdrop-blur-md border border-zinc-700/80 shadow-2xl rounded-xl text-xs font-semibold transition-all"
+        title="进入上一层目录"
+      >
+        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+        </svg>
+        <span>上一级</span>
+      </button>
+
+      <!-- 3. 回到书架首页 -->
       <button 
         @click="goHome"
         :class="(isRoot && viewMode === 'library' && !searchQuery) ? 'bg-zinc-900/70 text-zinc-400' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
         class="flex items-center gap-1.5 px-3.5 py-2.5 backdrop-blur-md border border-zinc-700/80 shadow-2xl rounded-xl text-xs font-semibold transition-all"
         title="回到书架首页"
       >
-        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
         </svg>
         <span>主页</span>
