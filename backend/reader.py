@@ -21,6 +21,10 @@ from .novel import NovelParser
 CACHE_DIR = Path(__file__).resolve().parent.parent / "data" / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
+# High-speed in-memory thumbnail and info cache (avoids disk IO for frequently browsed covers)
+_MEM_THUMB_CACHE: Dict[str, Tuple[bytes, str]] = {}
+_MAX_MEM_CACHE_ITEMS = 500
+
 
 def get_cache_path(key: str, ext: str = ".webp") -> Path:
     hash_key = hashlib.md5(key.encode('utf-8')).hexdigest()
@@ -30,24 +34,34 @@ def get_cache_path(key: str, ext: str = ".webp") -> Path:
 
 
 def extract_video_first_frame(video_path: Path) -> Optional[bytes]:
-    """Extract first frame of a video using ffmpeg CLI or fallback."""
+    """Extract first frame of a video using ffmpeg CLI or fallback with disk caching."""
+    mtime = os.path.getmtime(video_path) if video_path.exists() else 0
+    cache_key = f"vframe:{video_path}:{mtime}"
+    cache_file = get_cache_path(cache_key, ext=".jpg")
+
+    if cache_file.exists():
+        try:
+            with open(cache_file, "rb") as f:
+                return f.read()
+        except Exception:
+            pass
+
     import subprocess
     import shutil
 
     ffmpeg_bin = shutil.which("ffmpeg")
     if not ffmpeg_bin:
-        # Check common locations
-        for p in ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"]:
+        for p in ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg", "ffmpeg.exe", r"C:\ffmpeg\bin\ffmpeg.exe"]:
             if os.path.exists(p):
                 ffmpeg_bin = p
                 break
 
+    frame_data = None
     if ffmpeg_bin:
         try:
-            # Run ffmpeg to extract the first frame (ss 00:00:00.5) to pipe as jpeg
             cmd = [
                 ffmpeg_bin,
-                "-ss", "00:00:00.5",
+                "-ss", "00:00:01",
                 "-i", str(video_path),
                 "-vframes", "1",
                 "-f", "image2pipe",
@@ -55,27 +69,35 @@ def extract_video_first_frame(video_path: Path) -> Optional[bytes]:
                 "-"
             ]
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-            out, _ = proc.communicate(timeout=5)
+            out, _ = proc.communicate(timeout=3)
             if out and len(out) > 500:
-                return out
+                frame_data = out
         except Exception as e:
             print(f"ffmpeg frame extract failed: {e}")
 
-    # Fallback: create a stylish video placeholder image with PIL
-    try:
-        from PIL import ImageDraw, ImageFont
-        img = Image.new("RGB", (640, 360), color=(24, 24, 27))
-        draw = ImageDraw.Draw(img)
-        # Draw a video play button triangle
-        draw.polygon([(290, 150), (290, 210), (350, 180)], fill=(59, 130, 246))
-        # Draw video extension text
-        ext_text = video_path.suffix.upper()[1:]
-        draw.text((320, 240), f"{ext_text} VIDEO", fill=(161, 161, 170), anchor="mm")
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=85)
-        return buf.getvalue()
-    except Exception:
-        return None
+    if not frame_data:
+        # Fallback: create a stylish video placeholder image with PIL
+        try:
+            from PIL import ImageDraw
+            img = Image.new("RGB", (640, 360), color=(24, 24, 27))
+            draw = ImageDraw.Draw(img)
+            draw.polygon([(290, 150), (290, 210), (350, 180)], fill=(59, 130, 246))
+            ext_text = video_path.suffix.upper()[1:]
+            draw.text((320, 240), f"{ext_text} VIDEO", fill=(161, 161, 170), anchor="mm")
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=85)
+            frame_data = buf.getvalue()
+        except Exception:
+            return None
+
+    if frame_data:
+        try:
+            with open(cache_file, "wb") as f:
+                f.write(frame_data)
+        except Exception:
+            pass
+
+    return frame_data
 
 
 class ComicReader:
@@ -309,16 +331,28 @@ class ComicReader:
 
     @staticmethod
     def get_thumbnail_bytes(path_str: str, page_index: int = 0, max_size: int = 360) -> Tuple[bytes, str]:
-        """Generate and cache a thumbnail for fast loading."""
+        """Generate and cache a thumbnail with two-tier in-memory and disk caching."""
         mtime = os.path.getmtime(path_str) if os.path.exists(path_str) else 0
         cache_key = f"{path_str}:{mtime}:{page_index}:{max_size}"
+
+        # 1. Check ultra-fast in-memory cache
+        if cache_key in _MEM_THUMB_CACHE:
+            return _MEM_THUMB_CACHE[cache_key]
+
+        # 2. Check disk cache
         cache_file = get_cache_path(cache_key, ext=".webp")
-
         if cache_file.exists():
-            with open(cache_file, "rb") as f:
-                return f.read(), "image/webp"
+            try:
+                with open(cache_file, "rb") as f:
+                    cached_data = f.read()
+                    res = (cached_data, "image/webp")
+                    if len(_MEM_THUMB_CACHE) < _MAX_MEM_CACHE_ITEMS:
+                        _MEM_THUMB_CACHE[cache_key] = res
+                    return res
+            except Exception:
+                pass
 
-        # Generate on the fly
+        # 3. Generate on the fly
         raw_bytes, _ = ComicReader.get_page_bytes(path_str, page_index)
         
         try:
@@ -332,26 +366,34 @@ class ComicReader:
                 elif im.mode != 'RGB':
                     im = im.convert('RGB')
 
-                im.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+                im.thumbnail((max_size, max_size), Image.Resampling.BILINEAR)
                 
                 output = io.BytesIO()
-                im.save(output, format="WEBP", quality=82)
+                # Fast WebP encoding (method=1 is 5x-8x faster on CPU than method=4)
+                im.save(output, format="WEBP", quality=80, method=1)
                 thumb_bytes = output.getvalue()
 
                 # Save to disk cache
-                with open(cache_file, "wb") as f:
-                    f.write(thumb_bytes)
+                try:
+                    with open(cache_file, "wb") as f:
+                        f.write(thumb_bytes)
+                except Exception:
+                    pass
 
-                return thumb_bytes, "image/webp"
+                res = (thumb_bytes, "image/webp")
+                if len(_MEM_THUMB_CACHE) < _MAX_MEM_CACHE_ITEMS:
+                    _MEM_THUMB_CACHE[cache_key] = res
+
+                return res
         except Exception as e:
             print(f"Thumbnail generation error: {e}")
             return raw_bytes, "image/jpeg"
 
     @staticmethod
-    def get_optimized_page_bytes(path_str: str, page_index: int, max_dimension: int = 2048, quality: int = 82) -> Tuple[bytes, str]:
+    def get_optimized_page_bytes(path_str: str, page_index: int, max_dimension: int = 2048, quality: int = 80) -> Tuple[bytes, str]:
         """
         Weak network optimization:
-        Compresses image into optimized WebP with lanczos scaling (max 2048px)
+        Compresses image into optimized WebP with fast scaling (max 2048px)
         and caches on disk for zero-latency subsequent delivery.
         """
         mtime = os.path.getmtime(path_str) if os.path.exists(path_str) else 0
@@ -359,12 +401,15 @@ class ComicReader:
         cache_file = get_cache_path(cache_key, ext=".webp")
 
         if cache_file.exists():
-            with open(cache_file, "rb") as f:
-                return f.read(), "image/webp"
+            try:
+                with open(cache_file, "rb") as f:
+                    return f.read(), "image/webp"
+            except Exception:
+                pass
 
         raw_bytes, media_type = ComicReader.get_page_bytes(path_str, page_index)
 
-        # Do not convert animated GIF or video frame
+        # Do not convert animated GIF
         if media_type == "image/gif":
             return raw_bytes, "image/gif"
 
@@ -381,15 +426,19 @@ class ComicReader:
                 # Resize if larger than max_dimension
                 w, h = im.size
                 if max(w, h) > max_dimension:
-                    im.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
+                    im.thumbnail((max_dimension, max_dimension), Image.Resampling.BILINEAR)
 
                 output = io.BytesIO()
-                im.save(output, format="WEBP", quality=quality, method=4)
+                # Fast method=1 for non-blocking multi-client delivery
+                im.save(output, format="WEBP", quality=quality, method=1)
                 opt_bytes = output.getvalue()
 
                 # Cache to disk
-                with open(cache_file, "wb") as f:
-                    f.write(opt_bytes)
+                try:
+                    with open(cache_file, "wb") as f:
+                        f.write(opt_bytes)
+                except Exception:
+                    pass
 
                 return opt_bytes, "image/webp"
         except Exception as e:

@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
@@ -10,9 +11,9 @@ router = APIRouter(tags=["Library & Browsing"])
 
 
 @router.get("/api/library/browse")
-def browse_library(path: Optional[str] = Query(None), encoded_path: Optional[str] = Query(None)):
+async def browse_library(path: Optional[str] = Query(None), encoded_path: Optional[str] = Query(None)):
     """
-    Browse a directory.
+    Browse a directory without blocking concurrent requests from other clients.
     If neither path nor encoded_path is given, returns the top-level list of all bookshelves.
     """
     target_path = None
@@ -29,28 +30,31 @@ def browse_library(path: Optional[str] = Query(None), encoded_path: Optional[str
     allowed_roots = [Path(shelf["path"]).resolve() for shelf in config.get("bookshelves", []) if shelf.get("path")]
 
     if not target_path:
-        shelf_list = []
-        for shelf in config.get("bookshelves", []):
-            p = Path(shelf["path"])
-            cover_target = LibraryScanner.find_first_cover_target(p) if p.exists() else None
-            cover_url = f"/api/comic/thumbnail?comic_id={encode_path(cover_target)}&page_index=0" if cover_target else None
-            shelf_list.append({
-                "id": shelf["id"],
-                "name": shelf["name"],
-                "path": shelf["path"],
-                "encoded_path": encode_path(shelf["path"]),
-                "exists": p.exists(),
-                "type": "bookshelf",
-                "cover_url": cover_url
-            })
-        return {
-            "is_root": True,
-            "bookshelves": shelf_list
-        }
+        def build_root_shelf_list():
+            shelf_list = []
+            for shelf in config.get("bookshelves", []):
+                p = Path(shelf["path"])
+                cover_target = LibraryScanner.find_first_cover_target(p) if p.exists() else None
+                cover_url = f"/api/comic/thumbnail?comic_id={encode_path(cover_target)}&page_index=0" if cover_target else None
+                shelf_list.append({
+                    "id": shelf["id"],
+                    "name": shelf["name"],
+                    "path": shelf["path"],
+                    "encoded_path": encode_path(shelf["path"]),
+                    "exists": p.exists(),
+                    "type": "bookshelf",
+                    "cover_url": cover_url
+                })
+            return {
+                "is_root": True,
+                "bookshelves": shelf_list
+            }
+
+        return await asyncio.to_thread(build_root_shelf_list)
 
     # Sub-directory browsing with bookshelf boundary enforcement
     try:
-        res = LibraryScanner.browse_directory(target_path, allowed_roots=allowed_roots)
+        res = await asyncio.to_thread(LibraryScanner.browse_directory, target_path, allowed_roots=allowed_roots)
         res["is_root"] = False
         return res
     except PermissionError as e:
@@ -80,124 +84,127 @@ def fuzzy_match(query: str, target: str) -> bool:
     return False
 
 @router.get("/api/library/search")
-
-def search_library(q: str = Query(...)):
-    import os
-    from ..scanner import LibraryScanner, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, BOOK_EXTENSIONS, ARCHIVE_EXTENSIONS, PDF_EXTENSIONS
-    config = load_config()
-    allowed_roots = [Path(shelf["path"]).resolve() for shelf in config.get("bookshelves", []) if shelf.get("path")]
-    
-    query = q.lower()
-    folders = []
-    comics = []
-    max_results = 100
-    
-    for root in allowed_roots:
-        if not root.exists(): continue
+async def search_library(q: str = Query(...)):
+    """Search through all bookshelves asynchronously without blocking other client requests."""
+    def perform_scan():
+        import os
+        from ..scanner import LibraryScanner, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, BOOK_EXTENSIONS, ARCHIVE_EXTENSIONS, PDF_EXTENSIONS
+        config = load_config()
+        allowed_roots = [Path(shelf["path"]).resolve() for shelf in config.get("bookshelves", []) if shelf.get("path")]
         
-        for dirpath, dirnames, filenames in os.walk(root):
-            if len(folders) + len(comics) >= max_results:
-                break
-                
-            dirnames[:] = [d for d in dirnames if not d.startswith(".") and not d.startswith("$")]
+        query = q.lower()
+        folders = []
+        comics = []
+        max_results = 100
+        
+        for root in allowed_roots:
+            if not root.exists(): continue
             
-            for d in dirnames:
-                if fuzzy_match(query, d):
-                    full_path = Path(dirpath) / d
-                    try:
-                        has_images = LibraryScanner.is_comic_folder(full_path)
-                        sub_dirs = [s for s in full_path.iterdir() if s.is_dir() and not s.name.startswith(".")] if full_path.exists() else []
-                        if has_images and len(sub_dirs) == 0:
-                            # It's an image comic album
-                            page_count = sum(1 for e in full_path.iterdir() if e.is_file() and e.suffix.lower() in IMAGE_EXTENSIONS and not e.name.startswith("."))
-                            encoded_id = encode_path(str(full_path))
-                            comics.append({
-                                "id": encoded_id,
-                                "name": d,
-                                "title": d,
-                                "type": "folder",
-                                "ext": "album",
-                                "path": str(full_path),
-                                "page_count": page_count,
-                                "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
-                            })
-                        else:
-                            # Regular directory / series folder
-                            cover_target = LibraryScanner.find_first_cover_target(full_path)
-                            cover_url = f"/api/comic/thumbnail?comic_id={encode_path(cover_target)}&page_index=0" if cover_target else None
+            for dirpath, dirnames, filenames in os.walk(root):
+                if len(folders) + len(comics) >= max_results:
+                    break
+                    
+                dirnames[:] = [d for d in dirnames if not d.startswith(".") and not d.startswith("$")]
+                
+                for d in dirnames:
+                    if fuzzy_match(query, d):
+                        full_path = Path(dirpath) / d
+                        try:
+                            has_images = LibraryScanner.is_comic_folder(full_path)
+                            sub_dirs = [s for s in full_path.iterdir() if s.is_dir() and not s.name.startswith(".")] if full_path.exists() else []
+                            if has_images and len(sub_dirs) == 0:
+                                # It's an image comic album
+                                page_count = sum(1 for e in full_path.iterdir() if e.is_file() and e.suffix.lower() in IMAGE_EXTENSIONS and not e.name.startswith("."))
+                                encoded_id = encode_path(str(full_path))
+                                comics.append({
+                                    "id": encoded_id,
+                                    "name": d,
+                                    "title": d,
+                                    "type": "folder",
+                                    "ext": "album",
+                                    "path": str(full_path),
+                                    "page_count": page_count,
+                                    "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
+                                })
+                            else:
+                                # Regular directory / series folder
+                                cover_target = LibraryScanner.find_first_cover_target(full_path)
+                                cover_url = f"/api/comic/thumbnail?comic_id={encode_path(cover_target)}&page_index=0" if cover_target else None
+                                folders.append({
+                                    "id": encode_path(str(full_path)),
+                                    "name": d,
+                                    "path": str(full_path),
+                                    "type": "directory",
+                                    "has_images": has_images,
+                                    "cover_url": cover_url
+                                })
+                        except Exception:
                             folders.append({
                                 "id": encode_path(str(full_path)),
                                 "name": d,
                                 "path": str(full_path),
                                 "type": "directory",
-                                "has_images": has_images,
-                                "cover_url": cover_url
+                                "has_images": False,
+                                "cover_url": None
                             })
-                    except Exception:
-                        folders.append({
-                            "id": encode_path(str(full_path)),
-                            "name": d,
-                            "path": str(full_path),
-                            "type": "directory",
-                            "has_images": False,
-                            "cover_url": None
-                        })
-                    if len(folders) + len(comics) >= max_results: break
-            
-            if len(folders) + len(comics) >= max_results: break
-            
-            for f in filenames:
-                if f.startswith("."): continue
-                if fuzzy_match(query, f):
-                    ext = Path(f).suffix.lower()
-                    full_path = Path(dirpath) / f
-                    
-                    if ext in VIDEO_EXTENSIONS:
-                        comics.append({
-                            "id": encode_path(str(full_path)),
-                            "name": f,
-                            "title": full_path.stem,
-                            "type": "video",
-                            "ext": ext,
-                            "path": str(full_path),
-                            "page_count": 1,
-                            "cover_url": None
-                        })
-                    elif ext in BOOK_EXTENSIONS:
-                        comics.append({
-                            "id": encode_path(str(full_path)),
-                            "name": f,
-                            "title": full_path.stem,
-                            "type": "book",
-                            "ext": ext,
-                            "path": str(full_path),
-                            "page_count": 1,
-                            "cover_url": None
-                        })
-                    elif ext in ARCHIVE_EXTENSIONS or ext in PDF_EXTENSIONS:
-                        t = "pdf" if ext in PDF_EXTENSIONS else "archive"
-                        comics.append({
-                            "id": encode_path(str(full_path)),
-                            "name": f,
-                            "title": full_path.stem,
-                            "type": t,
-                            "ext": ext,
-                            "path": str(full_path),
-                            "page_count": 0,
-                            "cover_url": None
-                        })
-                    
-                    if len(folders) + len(comics) >= max_results: break
+                        if len(folders) + len(comics) >= max_results: break
+                
+                if len(folders) + len(comics) >= max_results: break
+                
+                for f in filenames:
+                    if f.startswith("."): continue
+                    if fuzzy_match(query, f):
+                        ext = Path(f).suffix.lower()
+                        full_path = Path(dirpath) / f
+                        
+                        if ext in VIDEO_EXTENSIONS:
+                            comics.append({
+                                "id": encode_path(str(full_path)),
+                                "name": f,
+                                "title": full_path.stem,
+                                "type": "video",
+                                "ext": ext,
+                                "path": str(full_path),
+                                "page_count": 1,
+                                "cover_url": None
+                            })
+                        elif ext in BOOK_EXTENSIONS:
+                            comics.append({
+                                "id": encode_path(str(full_path)),
+                                "name": f,
+                                "title": full_path.stem,
+                                "type": "book",
+                                "ext": ext,
+                                "path": str(full_path),
+                                "page_count": 1,
+                                "cover_url": None
+                            })
+                        elif ext in ARCHIVE_EXTENSIONS or ext in PDF_EXTENSIONS:
+                            t = "pdf" if ext in PDF_EXTENSIONS else "archive"
+                            comics.append({
+                                "id": encode_path(str(full_path)),
+                                "name": f,
+                                "title": full_path.stem,
+                                "type": t,
+                                "ext": ext,
+                                "path": str(full_path),
+                                "page_count": 0,
+                                "cover_url": None
+                            })
+                        
+                        if len(folders) + len(comics) >= max_results: break
 
-        if len(folders) + len(comics) >= max_results:
-            break
-            
-    return {
-        "is_root": False,
-        "is_search": True,
-        "current_path": f"搜索结果: {q}",
-        "encoded_path": "",
-        "folders": folders,
-        "comics": comics,
-        "total_items": len(folders) + len(comics)
-    }
+            if len(folders) + len(comics) >= max_results:
+                break
+                
+        return {
+            "is_root": False,
+            "is_search": True,
+            "current_path": f"搜索结果: {q}",
+            "encoded_path": "",
+            "folders": folders,
+            "comics": comics,
+            "total_items": len(folders) + len(comics)
+        }
+
+    return await asyncio.to_thread(perform_scan)

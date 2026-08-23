@@ -1,4 +1,5 @@
 import io
+import asyncio
 import zipfile
 from pathlib import Path
 from urllib.parse import quote
@@ -19,11 +20,11 @@ router = APIRouter(tags=["Comics & Ebooks"])
 
 
 @router.get("/api/comic/details")
-def get_comic_details(comic_id: str = Query(...)):
-    """Return all pages and metadata for a comic/album/novel."""
+async def get_comic_details(comic_id: str = Query(...)):
+    """Return all pages and metadata for a comic/album/novel without blocking async event loop."""
     try:
         file_path = decode_path(comic_id)
-        info = ComicReader.get_comic_info(file_path)
+        info = await asyncio.to_thread(ComicReader.get_comic_info, file_path)
         return info
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -32,14 +33,14 @@ def get_comic_details(comic_id: str = Query(...)):
 
 
 @router.get("/api/comic/page")
-def get_comic_page(comic_id: str = Query(...), page_index: int = Query(0), optimize: bool = Query(False)):
+async def get_comic_page(comic_id: str = Query(...), page_index: int = Query(0), optimize: bool = Query(False)):
     """Stream a single page image (supports weak network WebP optimization & caching)."""
     try:
         file_path = decode_path(comic_id)
         if optimize:
-            img_bytes, media_type = ComicReader.get_optimized_page_bytes(file_path, page_index)
+            img_bytes, media_type = await asyncio.to_thread(ComicReader.get_optimized_page_bytes, file_path, page_index)
         else:
-            img_bytes, media_type = ComicReader.get_page_bytes(file_path, page_index)
+            img_bytes, media_type = await asyncio.to_thread(ComicReader.get_page_bytes, file_path, page_index)
 
         return Response(
             content=img_bytes,
@@ -58,11 +59,11 @@ def get_comic_page(comic_id: str = Query(...), page_index: int = Query(0), optim
 
 
 @router.get("/api/comic/thumbnail")
-def get_comic_thumbnail(comic_id: str = Query(...), page_index: int = Query(0), size: int = Query(360)):
-    """Get a resized thumbnail with cache headers."""
+async def get_comic_thumbnail(comic_id: str = Query(...), page_index: int = Query(0), size: int = Query(360)):
+    """Get a resized thumbnail with high-speed in-memory & disk cache headers."""
     try:
         file_path = decode_path(comic_id)
-        img_bytes, media_type = ComicReader.get_thumbnail_bytes(file_path, page_index, max_size=size)
+        img_bytes, media_type = await asyncio.to_thread(ComicReader.get_thumbnail_bytes, file_path, page_index, size)
         return Response(
             content=img_bytes,
             media_type=media_type,

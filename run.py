@@ -99,13 +99,16 @@ def start_server():
     import threading
     threading.Thread(target=open_browser, daemon=True).start()
 
-    # Start uvicorn server
+    # Start uvicorn server with optimized concurrency settings
     uvicorn.run(
         "backend.app:app",
         host="0.0.0.0",
         port=port,
         reload=False,
-        log_level="info"
+        log_level="info",
+        timeout_keep_alive=30,
+        limit_concurrency=200,
+        backlog=2048
     )
 
 
