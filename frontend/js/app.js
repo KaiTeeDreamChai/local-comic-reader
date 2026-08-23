@@ -10,6 +10,8 @@ createApp({
     const breadcrumbs = ref([]);
     const searchQuery = ref('');
     const isSearchMode = ref(false);
+    const showMobileMenu = ref(false);
+    const highlightedItemId = ref(null);
     const loading = ref(false);
     const errorMsg = ref('');
     const navHistory = ref([]); // History stack for back navigation
@@ -147,6 +149,7 @@ createApp({
         }
         return;
       }
+      showMobileMenu.value = false;
       loading.value = true;
       errorMsg.value = '';
       try {
@@ -179,6 +182,21 @@ createApp({
           updateBreadcrumbs(data);
           currentPath.value = data.current_path || '';
         }
+
+        if (highlightedItemId.value) {
+          nextTick(() => {
+            const targetId = highlightedItemId.value;
+            const el = document.getElementById(`item-${targetId}`);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            setTimeout(() => {
+              if (highlightedItemId.value === targetId) {
+                highlightedItemId.value = null;
+              }
+            }, 3000);
+          });
+        }
       } catch (e) {
         errorMsg.value = e.message || '加载目录出错';
       } finally {
@@ -192,11 +210,16 @@ createApp({
 
     const navigateToCrumb = (crumb) => {
       pushNavHistory(currentPath.value ? btoa(unescape(encodeURIComponent(currentPath.value))) : '');
+      searchQuery.value = '';
+      isSearchMode.value = false;
       loadLibrary(crumb.encoded_path);
     };
 
     const openFolder = (folder) => {
       pushNavHistory(currentPath.value ? btoa(unescape(encodeURIComponent(currentPath.value))) : '');
+      searchQuery.value = '';
+      isSearchMode.value = false;
+      highlightedItemId.value = folder.id;
       loadLibrary(folder.id);
     };
 
@@ -481,6 +504,8 @@ createApp({
       breadcrumbs,
       searchQuery,
       isSearchMode,
+      showMobileMenu,
+      highlightedItemId,
       performGlobalSearch,
       filteredFolders,
       filteredComics,
