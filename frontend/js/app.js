@@ -89,6 +89,30 @@ createApp({
       return (currentDirectory.value.comics || []).filter(c => c.name.toLowerCase().includes(q));
     });
 
+    const updateBreadcrumbs = (data) => {
+      const sep = data.current_path.includes('\\') ? '\\' : '/';
+      const parts = data.current_path.split(sep).filter(Boolean);
+      
+      const crumbs = [{ name: '首页', encoded_path: '' }];
+      let accumulated = '';
+      
+      parts.forEach((p, idx) => {
+        if (sep === '/' && idx === 0 && !data.current_path.startsWith('/')) {
+          accumulated = p;
+        } else if (sep === '\\' && idx === 0) {
+          accumulated = p + '\\';
+        } else {
+          accumulated = accumulated ? `${accumulated}${sep}${p}` : (sep === '/' ? `/${p}` : p);
+        }
+        crumbs.push({
+          name: p,
+          path: accumulated,
+          encoded_path: btoa(unescape(encodeURIComponent(accumulated))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+        });
+      });
+      breadcrumbs.value = crumbs;
+    };
+
     // 8. Library Browsing & Actions
     const loadLibrary = async (encodedPath = '') => {
       loading.value = true;
@@ -103,7 +127,7 @@ createApp({
         } else {
           isRoot.value = false;
           currentDirectory.value = data;
-          breadcrumbs.value = data.breadcrumbs || [];
+          updateBreadcrumbs(data);
           currentPath.value = data.current_path || '';
         }
       } catch (e) {
@@ -124,7 +148,7 @@ createApp({
 
     const openFolder = (folder) => {
       pushNavHistory(currentPath.value ? btoa(unescape(encodeURIComponent(currentPath.value))) : '');
-      loadLibrary(folder.encoded_path);
+      loadLibrary(folder.id);
     };
 
     const handleAddBookshelf = async () => {
