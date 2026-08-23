@@ -312,3 +312,5 @@ class TouchController {
     this.el.removeEventListener('touchcancel', this.boundTouchEnd);
   }
 }
+
+window.TouchController = TouchController;
