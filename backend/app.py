@@ -28,11 +28,19 @@ if FRONTEND_DIR.exists():
 
     @app.get("/")
     def index():
-        return FileResponse(FRONTEND_DIR / "index.html")
+        return FileResponse(FRONTEND_DIR / "index.html", headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        })
 
     @app.get("/{catch_all:path}")
     def fallback(catch_all: str):
         target_file = FRONTEND_DIR / catch_all
         if target_file.is_file():
             return FileResponse(target_file)
-        return FileResponse(FRONTEND_DIR / "index.html")
+        return FileResponse(FRONTEND_DIR / "index.html", headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        })

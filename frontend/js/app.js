@@ -382,8 +382,8 @@ createApp({
       }
 
       try {
-        const drives = await window.API.getDrives();
-        systemDrives.value = drives;
+        const drivesResponse = await window.API.getDrives();
+        systemDrives.value = drivesResponse.drives || [];
       } catch (e) {
         console.error(e);
       }
