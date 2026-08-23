@@ -76,17 +76,39 @@ createApp({
       }
     };
 
+    const fuzzyMatch = (query, target) => {
+      const q = query.toLowerCase();
+      const t = target.toLowerCase();
+      if (t.includes(q)) return true;
+      
+      const qWords = q.split(/\s+/).filter(Boolean);
+      if (qWords.length > 0 && qWords.every(word => t.includes(word))) return true;
+      
+      const qClean = q.replace(/[^\p{L}\p{N}]+/gu, '');
+      const tClean = t.replace(/[^\p{L}\p{N}]+/gu, '');
+      if (qClean && tClean.includes(qClean)) return true;
+      
+      if (qClean.length >= 3) {
+        let tIndex = 0;
+        for (let i = 0; i < qClean.length; i++) {
+          tIndex = tClean.indexOf(qClean[i], tIndex);
+          if (tIndex === -1) return false;
+          tIndex++;
+        }
+        return true;
+      }
+      return false;
+    };
+
     // Filtered lists for search in library
     const filteredFolders = computed(() => {
       if (isSearchMode.value || !searchQuery.value.trim()) return currentDirectory.value.folders || [];
-      const q = searchQuery.value.toLowerCase();
-      return (currentDirectory.value.folders || []).filter(f => f.name.toLowerCase().includes(q));
+      return (currentDirectory.value.folders || []).filter(f => fuzzyMatch(searchQuery.value, f.name));
     });
 
     const filteredComics = computed(() => {
       if (isSearchMode.value || !searchQuery.value.trim()) return currentDirectory.value.comics || [];
-      const q = searchQuery.value.toLowerCase();
-      return (currentDirectory.value.comics || []).filter(c => c.name.toLowerCase().includes(q));
+      return (currentDirectory.value.comics || []).filter(c => fuzzyMatch(searchQuery.value, c.name));
     });
 
     const updateBreadcrumbs = (data) => {

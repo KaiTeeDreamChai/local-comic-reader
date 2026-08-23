@@ -63,7 +63,24 @@ def browse_library(path: Optional[str] = Query(None), encoded_path: Optional[str
         raise HTTPException(status_code=500, detail=f"访问目录出错: {str(e)}")
 
 
+
+def fuzzy_match(query: str, target: str) -> bool:
+    q = query.lower()
+    t = target.lower()
+    if q in t: return True
+    q_words = q.split()
+    if all(word in t for word in q_words): return True
+    import re
+    q_clean = re.sub(r'[\W_]+', '', q)
+    t_clean = re.sub(r'[\W_]+', '', t)
+    if q_clean and q_clean in t_clean: return True
+    if len(q_clean) >= 3:
+        it = iter(t_clean)
+        if all(c in it for c in q_clean): return True
+    return False
+
 @router.get("/api/library/search")
+
 def search_library(q: str = Query(...)):
     import os
     from ..scanner import VIDEO_EXTENSIONS, BOOK_EXTENSIONS, ARCHIVE_EXTENSIONS, PDF_EXTENSIONS
@@ -85,7 +102,7 @@ def search_library(q: str = Query(...)):
             dirnames[:] = [d for d in dirnames if not d.startswith(".") and not d.startswith("$")]
             
             for d in dirnames:
-                if query in d.lower():
+                if fuzzy_match(query, d):
                     full_path = Path(dirpath) / d
                     folders.append({
                         "id": encode_path(str(full_path)),
@@ -101,7 +118,7 @@ def search_library(q: str = Query(...)):
             
             for f in filenames:
                 if f.startswith("."): continue
-                if query in f.lower():
+                if fuzzy_match(query, f):
                     ext = Path(f).suffix.lower()
                     full_path = Path(dirpath) / f
                     
