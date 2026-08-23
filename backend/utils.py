@@ -16,7 +16,8 @@ except ImportError:
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.avif'}
 ARCHIVE_EXTENSIONS = {'.zip', '.cbz'}
 PDF_EXTENSIONS = {'.pdf'}
-SUPPORTED_EXTENSIONS = IMAGE_EXTENSIONS | ARCHIVE_EXTENSIONS | PDF_EXTENSIONS
+VIDEO_EXTENSIONS = {'.mp4', '.mkv', '.webm', '.avi', '.mov', '.flv', '.wmv', '.m4v', '.ts'}
+SUPPORTED_EXTENSIONS = IMAGE_EXTENSIONS | ARCHIVE_EXTENSIONS | PDF_EXTENSIONS | VIDEO_EXTENSIONS
 
 
 def encode_path(path_str: str) -> str:

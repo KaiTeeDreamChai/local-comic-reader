@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>漫画与画册局域网浏览器</title>
+  <title>Local Comic & Media Reader</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -36,7 +36,7 @@
 </head>
 <body class="bg-zinc-950 text-zinc-100 h-full flex flex-col overflow-hidden font-sans antialiased select-none">
 
-  <div id="app" class="h-full flex flex-col">
+  <div id="app" class="h-full flex flex-col" v-cloak>
     
     <!-- ========================================== -->
     <!-- 1. 书架/目录 浏览视图 (LIBRARY VIEW) -->
@@ -51,7 +51,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
             </svg>
           </div>
-          <span class="font-bold text-lg tracking-tight hidden sm:inline">本地画册</span>
+          <span class="font-bold text-base md:text-lg tracking-tight hidden sm:inline">{{ t('appName') }}</span>
           
           <!-- Breadcrumbs -->
           <nav class="flex items-center text-sm font-medium text-zinc-400 overflow-x-auto whitespace-nowrap scrollbar-none py-1">
@@ -62,7 +62,7 @@
                 :class="idx === breadcrumbs.length - 1 ? 'text-zinc-100 font-semibold' : 'text-zinc-400 hover:text-blue-400'"
                 class="transition-colors truncate max-w-[120px] sm:max-w-[200px]"
               >
-                {{ crumb.name }}
+                {{ crumb.name === '首页' ? t('home') : crumb.name }}
               </button>
             </template>
           </nav>
@@ -75,7 +75,7 @@
             <input 
               v-model="searchQuery" 
               type="text" 
-              placeholder="搜索漫画或目录..." 
+              :placeholder="t('searchPlaceholder')" 
               class="w-full bg-zinc-800/80 border border-zinc-700 text-xs rounded-full py-1.5 pl-8 pr-3 text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors"
             >
             <svg class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,14 +86,14 @@
           <!-- Weak Network Turbo Boost Toggle Button -->
           <button 
             @click="toggleWeakNetworkMode"
-            :title="weakNetworkMode ? '弱网优化模式：已开启（智能高压WebP与深度预加载）' : '弱网优化模式：已关闭（点击开启）'"
+            :title="weakNetworkMode ? t('turboModeOn') : t('turboModeOff')"
             :class="weakNetworkMode ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-lg shadow-amber-500/10' : 'bg-zinc-800/80 border-zinc-700/60 text-zinc-400 hover:text-zinc-200'"
             class="flex items-center gap-1.5 px-2.5 py-1.5 border rounded-lg text-xs font-semibold transition-all select-none"
           >
             <svg class="w-4 h-4" :class="weakNetworkMode ? 'text-amber-400 animate-pulse' : 'text-zinc-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
-            <span class="hidden sm:inline">{{ weakNetworkMode ? '弱网加速: 开' : '弱网加速: 关' }}</span>
+            <span class="hidden sm:inline">{{ t('turboModeActive') }}: {{ weakNetworkMode ? 'ON' : 'OFF' }}</span>
             <span 
               :class="weakNetworkMode ? 'bg-amber-400 ring-2 ring-amber-400/40' : 'bg-zinc-600'" 
               class="w-2 h-2 rounded-full transition-colors"
@@ -103,18 +103,31 @@
           <!-- Bookshelf Manager Button -->
           <button 
             @click="showBookshelfModal = true"
+            :title="t('bookshelfManage')"
             class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow transition-colors"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
-            <span>书架管理</span>
+            <span class="hidden sm:inline">{{ t('bookshelfManage') }}</span>
+          </button>
+
+          <!-- Settings Button -->
+          <button 
+            @click="showSettingsModal = true"
+            :title="t('settings')"
+            class="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition-colors"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
           </button>
 
           <!-- LAN Info / QR Button -->
           <button 
             @click="showInfoModal = true"
-            title="局域网连接与平板访问"
+            :title="t('lanDevice')"
             class="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition-colors"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,14 +152,14 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
             </svg>
           </div>
-          <h3 class="text-lg font-semibold text-zinc-200 mb-1">该目录不可用或无法访问</h3>
-          <p class="text-sm text-zinc-400 max-w-md mb-5">{{ errorMsg }}</p>
+          <h3 class="text-lg font-semibold text-zinc-200 mb-1">{{ t('errorTitle') }}</h3>
+          <p class="text-sm text-zinc-400 max-w-md mb-5">{{ errorMsg || t('errorDescFallback') }}</p>
           <div class="flex items-center gap-3">
             <button @click="goBack" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-sm font-medium transition-colors">
-              返回上一个页面
+              {{ t('backToLast') }}
             </button>
             <button @click="goHome" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30 transition-colors">
-              回到书架首页
+              {{ t('backToHome') }}
             </button>
           </div>
         </div>
@@ -155,7 +168,7 @@
         <div v-else-if="isRoot">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
-              <span>已添加的书架目录</span>
+              <span>{{ t('bookshelfCount') }}</span>
               <span class="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">{{ bookshelves.length }}</span>
             </h2>
           </div>
@@ -166,10 +179,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
               </svg>
             </div>
-            <h3 class="text-base font-semibold text-zinc-200 mb-1">暂无书架目录</h3>
-            <p class="text-sm text-zinc-400 mb-5 max-w-sm mx-auto">请点击上方“书架管理”添加您电脑上的漫画文件夹（例如 D:\Comics 或 ~/Pictures）</p>
+            <h3 class="text-base font-semibold text-zinc-200 mb-1">{{ t('noBookshelves') }}</h3>
+            <p class="text-sm text-zinc-400 mb-5 max-w-sm mx-auto">{{ t('noBookshelvesDesc') }}</p>
             <button @click="showBookshelfModal = true" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30">
-              立即添加书架目录
+              {{ t('addBookshelfNow') }}
             </button>
           </div>
 
@@ -192,10 +205,10 @@
                   <svg class="w-12 h-12 mb-2 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                   </svg>
-                  <span class="text-xs text-zinc-500">文件夹</span>
+                  <span class="text-xs text-zinc-500">{{ t('folderBadge') }}</span>
                 </div>
                 <div class="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] font-semibold text-blue-400">
-                  书架
+                  {{ t('bookshelfBadge') }}
                 </div>
               </div>
               <div class="p-3 flex-1 flex flex-col justify-between">
@@ -217,7 +230,7 @@
               <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
               </svg>
-              <span>子目录 ({{ filteredFolders.length }})</span>
+              <span>{{ t('subFolders') }} ({{ filteredFolders.length }})</span>
             </h3>
             
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -239,10 +252,10 @@
                     <svg class="w-10 h-10 mb-2 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                     </svg>
-                    <span class="text-xs text-zinc-500">系列目录</span>
+                    <span class="text-xs text-zinc-500">{{ t('folderBadge') }}</span>
                   </div>
                   <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] font-medium text-zinc-300">
-                    目录
+                    {{ t('folderBadge') }}
                   </div>
                 </div>
                 <div class="p-2.5">
@@ -260,7 +273,7 @@
               <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
-              <span>漫画与画册 ({{ filteredComics.length }})</span>
+              <span>{{ t('comicsSection') }} ({{ filteredComics.length }})</span>
             </h3>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -279,16 +292,29 @@
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   >
                   <div v-else class="text-zinc-600 flex flex-col items-center justify-center p-4">
-                    <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-if="comic.type === 'video'" class="w-10 h-10 mb-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <svg v-else class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <span class="text-xs">无封面</span>
+                    <span class="text-xs">{{ t('noCover') }}</span>
+                  </div>
+
+                  <!-- Play Video Icon Overlay if Video -->
+                  <div v-if="comic.type === 'video'" class="absolute inset-0 bg-black/25 flex items-center justify-center group-hover:bg-black/10 transition-colors">
+                    <div class="w-10 h-10 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <svg class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"></path>
+                      </svg>
+                    </div>
                   </div>
 
                   <!-- Floating Download Button on Card -->
                   <button 
                     @click.stop="downloadComic(comic)" 
-                    :title="`下载《${comic.name}》ZIP压缩包`"
+                    :title="`${t('downloadZipTitle')}: ${comic.name}`"
                     class="absolute top-2 left-2 p-1.5 bg-black/75 hover:bg-blue-600 active:scale-90 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow-md transition-all duration-150 z-10"
                   >
                     <svg v-if="!downloadingComics.has(comic.id)" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,11 +328,11 @@
 
                   <!-- Type Badge -->
                   <div class="absolute top-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
-                    {{ comic.type === 'pdf' ? 'PDF' : (comic.type === 'archive' ? 'ZIP' : '文件夹') }}
+                    {{ comic.type === 'video' ? t('videoBadge') : (comic.type === 'pdf' ? 'PDF' : (comic.type === 'archive' ? 'ZIP' : t('folderTypeBadge'))) }}
                   </div>
 
-                  <!-- Page Count Badge -->
-                  <div v-if="comic.page_count" class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[10px] font-medium text-zinc-300">
+                  <!-- Page Count / Video Duration Badge -->
+                  <div v-if="comic.page_count && comic.type !== 'video'" class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[10px] font-medium text-zinc-300">
                     {{ comic.page_count }}P
                   </div>
                 </div>
@@ -325,7 +351,7 @@
             <svg class="w-12 h-12 mx-auto mb-3 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
             </svg>
-            <p class="text-sm">此文件夹下未找到漫画、画册、ZIP或PDF文件</p>
+            <p class="text-sm">{{ t('emptyDir') }}</p>
           </div>
         </div>
 
@@ -333,7 +359,7 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 2. 触屏漫画阅读器视图 (READER VIEW) -->
+    <!-- 2. 触屏阅读器 / 视频播放视图 (READER / MEDIA VIEW) -->
     <!-- ========================================== -->
     <div v-if="viewMode === 'reader'" class="h-full w-full bg-black relative flex flex-col select-none overflow-hidden">
       
@@ -346,12 +372,12 @@
           <button 
             @click="closeReader" 
             class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md transition-colors shrink-0"
-            title="退出阅读"
+            :title="t('exit')"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
             </svg>
-            <span>退出</span>
+            <span>{{ t('exit') }}</span>
           </button>
           
           <div class="truncate">
@@ -359,63 +385,70 @@
               {{ currentComic?.title }}
             </h2>
             <div class="text-[11px] text-zinc-400 flex items-center gap-2">
-              <span v-if="!isDoublePage">第 {{ currentPageIndex + 1 }} / {{ currentComic?.total_pages }} 页</span>
-              <span v-else>第 {{ currentPageIndex + 1 }}<template v-if="currentPairIndex !== null">-{{ currentPairIndex + 1 }}</template> / {{ currentComic?.total_pages }} 页</span>
-              <span class="text-zinc-600">•</span>
-              <span>{{ readingMode === 'paged' ? (isDoublePage ? (readingDirection === 'rtl' ? '双页日漫(RTL)' : '双页(LTR)') : (readingDirection === 'rtl' ? '日漫(RTL)' : '单页(LTR)')) : '条漫' }}</span>
+              <template v-if="currentComic?.type !== 'video'">
+                <span v-if="!isDoublePage">{{ t('pageIndicator', { current: currentPageIndex + 1, total: currentComic?.total_pages }) }}</span>
+                <span v-else>{{ t('pagePairIndicator', { start: currentPageIndex + 1, end: (currentPairIndex !== null ? currentPairIndex + 1 : currentPageIndex + 1), total: currentComic?.total_pages }) }}</span>
+                <span class="text-zinc-600">•</span>
+                <span>{{ readingMode === 'paged' ? (isDoublePage ? (readingDirection === 'rtl' ? t('mangaDoubleRTL') : t('mangaDoubleLTR')) : (readingDirection === 'rtl' ? t('mangaRTL') : t('mangaLTR'))) : t('waterfallMode') }}</span>
+              </template>
+              <template v-else>
+                <span class="text-indigo-400 font-semibold">{{ t('videoMode') }}</span>
+              </template>
             </div>
           </div>
         </div>
 
         <!-- Mode & Orientation Toggles -->
         <div class="flex items-center gap-1.5 shrink-0">
-          <!-- Reading Mode (Paged vs Scroll) -->
-          <button 
-            @click="toggleReadingMode" 
-            :title="readingMode === 'paged' ? '切换为条漫瀑布流' : '切换为分页模式'"
-            class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-1 text-xs"
-          >
-            <svg v-if="readingMode === 'paged'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7"></path>
-            </svg>
-            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-            <span class="hidden sm:inline">{{ readingMode === 'paged' ? '分页' : '条漫' }}</span>
-          </button>
+          <template v-if="currentComic?.type !== 'video'">
+            <!-- Reading Mode (Paged vs Scroll) -->
+            <button 
+              @click="toggleReadingMode" 
+              :title="readingMode === 'paged' ? t('modePagedDesc') : t('modeScrollDesc')"
+              class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-1 text-xs"
+            >
+              <svg v-if="readingMode === 'paged'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7"></path>
+              </svg>
+              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+              <span class="hidden sm:inline">{{ readingMode === 'paged' ? t('modePaged') : t('modeScroll') }}</span>
+            </button>
 
-          <!-- Dual Page Spread Toggle (Visible on Desktop or Mobile Landscape) -->
-          <button 
-            v-if="isWideOrLandscape && readingMode === 'paged'"
-            @click="togglePageSpread" 
-            :title="pageSpread === 'double' ? '当前双页并排显示，点击切换单页' : '当前单页显示，点击切换双页并排'"
-            class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-1 text-xs"
-            :class="{ 'text-blue-400 bg-blue-500/20 font-semibold': isDoublePage }"
-          >
-            <svg v-if="pageSpread === 'double'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-            </svg>
-            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            <span class="hidden sm:inline">{{ pageSpread === 'double' ? '双页' : '单页' }}</span>
-          </button>
+            <!-- Dual Page Spread Toggle (Visible on Desktop or Mobile Landscape) -->
+            <button 
+              v-if="isWideOrLandscape && readingMode === 'paged'"
+              @click="togglePageSpread" 
+              :title="pageSpread === 'double' ? t('spreadDoubleDesc') : t('spreadSingleDesc')"
+              class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-1 text-xs"
+              :class="{ 'text-blue-400 bg-blue-500/20 font-semibold': isDoublePage }"
+            >
+              <svg v-if="pageSpread === 'double'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              </svg>
+              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <span class="hidden sm:inline">{{ pageSpread === 'double' ? t('spreadDouble') : t('spreadSingle') }}</span>
+            </button>
 
-          <!-- RTL / LTR Direction toggle for paged mode -->
-          <button 
-            v-if="readingMode === 'paged'"
-            @click="toggleReadingDirection"
-            :title="readingDirection === 'rtl' ? '切换为左至右(LTR)' : '切换为右至左日漫(RTL)'"
-            class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors text-xs font-semibold"
-          >
-            {{ readingDirection === 'rtl' ? 'RTL' : 'LTR' }}
-          </button>
+            <!-- RTL / LTR Direction toggle for paged mode -->
+            <button 
+              v-if="readingMode === 'paged'"
+              @click="toggleReadingDirection"
+              :title="readingDirection === 'rtl' ? t('dirRTLDesc') : t('dirLTRDesc')"
+              class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors text-xs font-semibold"
+            >
+              {{ readingDirection === 'rtl' ? 'RTL' : 'LTR' }}
+            </button>
+          </template>
 
           <!-- Fullscreen Toggle -->
           <button 
             @click="toggleFullscreen" 
             class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-            title="全屏切换"
+            :title="t('fullscreen')"
           >
             <svg v-if="!isFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5m-6 11l-5 5m0 0v-4m0 4h4m11-5l5 5m0 0h-4m4 0v-4"></path>
@@ -428,7 +461,7 @@
           <!-- Download ZIP in Reader -->
           <button 
             @click="downloadComic(currentComic)" 
-            :title="`下载当前漫画 (${currentComic?.title}.zip)`"
+            :title="t('downloadCurrent', { title: currentComic?.title })"
             class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
           >
             <svg v-if="!downloadingComics.has(currentComic?.id)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -443,7 +476,7 @@
           <!-- Weak Network Toggle in Reader HUD -->
           <button 
             @click="toggleWeakNetworkMode"
-            :title="weakNetworkMode ? '弱网加速模式：已开启' : '弱网加速模式：已关闭'"
+            :title="weakNetworkMode ? t('turboModeOn') : t('turboModeOff')"
             :class="weakNetworkMode ? 'text-amber-400 bg-amber-500/20' : 'text-zinc-400 hover:text-zinc-200'"
             class="p-2 rounded-lg transition-colors flex items-center gap-1 text-xs"
           >
@@ -454,30 +487,51 @@
         </div>
       </div>
 
-      <!-- Main Reader Area -->
+      <!-- Main Reader / Media Area -->
       <div class="flex-1 w-full h-full relative overflow-hidden flex items-center justify-center">
         
-        <!-- Paged Mode Viewport (Single or Dual Page) -->
-        <div v-if="readingMode === 'paged'" class="reader-viewport w-full h-full relative">
+        <!-- Video Player View (When opening a video file) -->
+        <div v-if="currentComic?.type === 'video'" class="w-full h-full flex items-center justify-center bg-black relative">
+          <!-- Top Screen Tap Zone for Video HUD -->
+          <div 
+            @click.stop="showHud = true; resetHudTimer();" 
+            class="absolute top-0 inset-x-0 h-24 z-30 cursor-pointer pointer-events-auto"
+            :title="t('topExitHint')"
+          ></div>
+
+          <video 
+            :src="currentComic.video_url" 
+            controls 
+            autoplay 
+            playsinline 
+            class="max-w-full max-h-full rounded-lg shadow-2xl focus:outline-none"
+            :preload="weakNetworkMode ? 'metadata' : 'auto'"
+          >
+            <p class="text-zinc-400 text-sm p-4">{{ t('videoUnsupported') }}</p>
+          </video>
+        </div>
+
+        <!-- Paged Mode Viewport (Single or Dual Page Image) -->
+        <div v-else-if="readingMode === 'paged'" class="reader-viewport w-full h-full relative">
           <!-- Single Page View -->
           <div v-if="!isDoublePage" class="reader-image-container relative w-full h-full flex items-center justify-center">
             <!-- Left 20% Tap/Click Zone -->
             <div 
               @click.stop="onLeftZoneClick" 
               class="absolute left-0 inset-y-0 w-[20%] z-20 cursor-pointer"
-              title="点击翻页 (左侧区域)"
+              :title="t('leftClickTurn')"
             ></div>
             <!-- Center 60% Tap/Click Zone (Toggle HUD) -->
             <div 
               @click.stop="toggleHud" 
               class="absolute left-[20%] right-[20%] inset-y-0 z-10 cursor-pointer"
-              title="点击呼出/收起控制栏"
+              :title="t('centerClickHud')"
             ></div>
             <!-- Right 20% Tap/Click Zone -->
             <div 
               @click.stop="onRightZoneClick" 
               class="absolute right-0 inset-y-0 w-[20%] z-20 cursor-pointer"
-              title="点击翻页 (右侧区域)"
+              :title="t('rightClickTurn')"
             ></div>
 
             <img 
@@ -498,7 +552,7 @@
             <div 
               @click.stop="readingDirection === 'rtl' ? onRightZoneClick() : onLeftZoneClick()"
               class="reader-dual-page reader-dual-page-left"
-              :title="`第 ${currentPageIndex + 1} 页 (点击翻页)`"
+              :title="`${currentPageIndex + 1} (${t('leftClickTurn')})`"
             >
               <img 
                 v-if="currentComic?.pages[currentPageIndex]"
@@ -513,7 +567,7 @@
               v-if="currentPairIndex !== null" 
               @click.stop="readingDirection === 'rtl' ? onLeftZoneClick() : onRightZoneClick()"
               class="reader-dual-page reader-dual-page-right"
-              :title="`第 ${currentPairIndex + 1} 页 (点击翻页)`"
+              :title="`${currentPairIndex + 1} (${t('rightClickTurn')})`"
             >
               <img 
                 v-if="currentComic?.pages[currentPairIndex]"
@@ -535,7 +589,7 @@
           <div 
             @click.stop="showHud = true; resetHudTimer();" 
             class="sticky top-0 inset-x-0 h-16 -mt-12 z-30 cursor-pointer pointer-events-auto"
-            title="点击顶部呼出菜单与退出按钮"
+            :title="t('topExitHint')"
           ></div>
 
           <div 
@@ -555,8 +609,9 @@
 
       </div>
 
-      <!-- Bottom HUD Floating Bar -->
+      <!-- Bottom HUD Floating Bar (Only for non-video comics) -->
       <div 
+        v-if="currentComic?.type !== 'video'"
         :class="{ 'hud-bottom-hidden': !showHud }" 
         class="hud-bar absolute bottom-0 left-0 right-0 z-40 bg-zinc-950/85 backdrop-blur-md border-t border-zinc-800/80 px-4 py-3 flex flex-col gap-2"
       >
@@ -567,7 +622,7 @@
             @click.stop="onLeftZoneClick" 
             :disabled="readingDirection === 'rtl' ? (currentPageIndex >= (currentComic?.total_pages || 1) - 1) : (currentPageIndex <= 0)"
             class="p-2 text-zinc-300 disabled:opacity-30 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-            title="上一页 / 翻页"
+            :title="t('prevPageTitle')"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -594,7 +649,7 @@
             @click.stop="onRightZoneClick" 
             :disabled="readingDirection === 'rtl' ? (currentPageIndex <= 0) : (currentPageIndex >= (currentComic?.total_pages || 1) - 1)"
             class="p-2 text-zinc-300 disabled:opacity-30 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-            title="下一页 / 翻页"
+            :title="t('nextPageTitle')"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -606,7 +661,7 @@
             @click="showThumbnailDrawer = !showThumbnailDrawer"
             :class="showThumbnailDrawer ? 'text-blue-400 bg-blue-500/20' : 'text-zinc-400 hover:text-white'"
             class="p-1.5 rounded-lg transition-colors ml-1"
-            title="查看所有缩略图"
+            :title="t('allThumbnails')"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
@@ -645,7 +700,7 @@
             <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
             </svg>
-            <span>书架目录管理</span>
+            <span>{{ t('modalBookshelfTitle') }}</span>
           </h3>
           <button @click="showBookshelfModal = false" class="text-zinc-400 hover:text-white p-1 rounded-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -657,19 +712,19 @@
         <div class="py-4 overflow-y-auto space-y-4">
           <!-- Add New Path Section -->
           <div>
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">添加本地电脑文件夹路径</label>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">{{ t('inputPathLabel') }}</label>
             <div class="space-y-2">
               <input 
                 v-model="newShelfPath" 
                 type="text" 
-                placeholder="例如: D:\Comics 或 /Users/name/Pictures" 
+                :placeholder="t('inputPathPlaceholder')" 
                 class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500"
               >
               <div class="flex gap-2">
                 <input 
                   v-model="newShelfName" 
                   type="text" 
-                  placeholder="书架名称 (可选，默认使用文件夹名)" 
+                  :placeholder="t('inputNamePlaceholder')" 
                   class="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500"
                 >
                 <button 
@@ -677,14 +732,14 @@
                   :disabled="addingShelf || !newShelfPath.trim()"
                   class="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-xl text-sm font-semibold transition-colors"
                 >
-                  {{ addingShelf ? '添加中...' : '添加' }}
+                  {{ addingShelf ? t('btnAdding') : t('btnAdd') }}
                 </button>
               </div>
             </div>
 
             <!-- Quick Root Directory Pickers -->
             <div v-if="systemDrives.length > 0" class="mt-2.5">
-              <span class="text-[11px] text-zinc-400 mb-1 block">快捷填入系统根目录/盘符：</span>
+              <span class="text-[11px] text-zinc-400 mb-1 block">{{ t('quickDrivesLabel') }}</span>
               <div class="flex flex-wrap gap-1.5">
                 <button 
                   v-for="drive in systemDrives" 
@@ -700,9 +755,9 @@
 
           <!-- Existing Bookshelves List -->
           <div>
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">已添加的书架 ({{ bookshelves.length }})</label>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">{{ t('addedShelvesLabel', { count: bookshelves.length }) }}</label>
             <div v-if="bookshelves.length === 0" class="text-xs text-zinc-500 py-3 text-center bg-zinc-800/40 rounded-xl">
-              暂无已添加书架
+              {{ t('noAddedShelves') }}
             </div>
             <div v-else class="space-y-2 max-h-48 overflow-y-auto pr-1">
               <div 
@@ -717,7 +772,7 @@
                 <button 
                   @click="handleDeleteBookshelf(shelf.id)"
                   class="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-zinc-700 rounded-lg transition-colors"
-                  title="移除书架"
+                  title="Remove"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -730,7 +785,7 @@
 
         <div class="pt-3 border-t border-zinc-800 flex justify-end">
           <button @click="showBookshelfModal = false" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-medium">
-            完成
+            {{ t('btnDone') }}
           </button>
         </div>
       </div>
@@ -746,7 +801,7 @@
             <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
             </svg>
-            <span>局域网多设备访问</span>
+            <span>{{ t('modalLanTitle') }}</span>
           </h3>
           <button @click="showInfoModal = false" class="text-zinc-400 hover:text-white p-1 rounded-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -757,7 +812,7 @@
 
         <div class="py-4 space-y-3">
           <p class="text-xs text-zinc-300">
-            请确保平板、手机与电脑连接在同一个 Wi-Fi / 局域网下，在手机或平板浏览器中输入以下地址即可浏览：
+            {{ t('lanDesc') }}
           </p>
 
           <div class="space-y-2">
@@ -767,7 +822,7 @@
               class="p-3 bg-zinc-800/80 rounded-xl border border-zinc-700 flex items-center justify-between"
             >
               <span class="font-mono text-sm text-blue-400 font-semibold select-all">{{ url }}</span>
-              <a :href="url" target="_blank" class="text-xs text-zinc-400 hover:text-zinc-200 underline">打开</a>
+              <a :href="url" target="_blank" class="text-xs text-zinc-400 hover:text-zinc-200 underline">{{ t('openLink') }}</a>
             </div>
           </div>
 
@@ -776,27 +831,128 @@
               <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <span>触屏手势操作提示：</span>
+              <span>{{ t('touchTipsTitle') }}</span>
             </div>
             <ul class="list-disc list-inside text-zinc-300 space-y-0.5 pl-1">
-              <li>左右滑动或点击两侧区域即可翻页</li>
-              <li>点击屏幕中央唤出顶部与底部控制栏</li>
-              <li>双击或两指张开可放大细节</li>
-              <li>支持切换横向翻页与纵向条漫模式</li>
+              <li>{{ t('touchTip1') }}</li>
+              <li>{{ t('touchTip2') }}</li>
+              <li>{{ t('touchTip3') }}</li>
+              <li>{{ t('touchTip4') }}</li>
+              <li>{{ t('touchTip5') }}</li>
             </ul>
           </div>
         </div>
 
         <div class="pt-3 border-t border-zinc-800 flex justify-end">
           <button @click="showInfoModal = false" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold">
-            知道了
+            {{ t('btnGotIt') }}
           </button>
         </div>
       </div>
     </div>
 
     <!-- ========================================== -->
-    <!-- 5. 网页左下角快捷导航 (BACK, PARENT & HOME) -->
+    <!-- 5. 设置弹窗 (SETTINGS MODAL) -->
+    <!-- ========================================== -->
+    <div v-if="showSettingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <h3 class="font-bold text-base text-zinc-100 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span>{{ t('modalSettingsTitle') }}</span>
+          </h3>
+          <button @click="showSettingsModal = false" class="text-zinc-400 hover:text-white p-1 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="py-4 space-y-4">
+          <!-- Language Selector -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-2">{{ t('languageSetting') }}</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button 
+                @click="setLanguage('zh')" 
+                :class="currentLang === 'zh' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="py-2.5 px-3 rounded-xl border text-xs flex items-center justify-center gap-1.5 transition-all"
+              >
+                <span>🇨🇳</span>
+                <span>{{ t('langZh') }}</span>
+              </button>
+              <button 
+                @click="setLanguage('en')" 
+                :class="currentLang === 'en' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="py-2.5 px-3 rounded-xl border text-xs flex items-center justify-center gap-1.5 transition-all"
+              >
+                <span>🇺🇸</span>
+                <span>{{ t('langEn') }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Reading Mode Preference -->
+          <div class="pt-2 border-t border-zinc-800">
+            <label class="block text-xs font-semibold text-zinc-300 mb-2">{{ t('defaultReadingMode') }}</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button 
+                @click="readingMode = 'paged'; saveSettings()" 
+                :class="readingMode === 'paged' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="py-2 px-3 rounded-xl border text-xs transition-all"
+              >
+                {{ t('modePaged') }}
+              </button>
+              <button 
+                @click="readingMode = 'scroll'; saveSettings()" 
+                :class="readingMode === 'scroll' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="py-2 px-3 rounded-xl border text-xs transition-all"
+              >
+                {{ t('modeScroll') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Direction Preference -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-2">{{ t('defaultDirection') }}</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button 
+                @click="readingDirection = 'ltr'; saveSettings()" 
+                :class="readingDirection === 'ltr' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="py-2 px-3 rounded-xl border text-xs transition-all"
+              >
+                {{ t('dirLTR') }}
+              </button>
+              <button 
+                @click="readingDirection = 'rtl'; saveSettings()" 
+                :class="readingDirection === 'rtl' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="py-2 px-3 rounded-xl border text-xs transition-all"
+              >
+                {{ t('dirRTL') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- About Project Note -->
+          <div class="pt-2 border-t border-zinc-800 text-[11px] text-zinc-500 leading-relaxed">
+            <p>{{ t('aboutDesc') }}</p>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-zinc-800 flex justify-end">
+          <button @click="showSettingsModal = false" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold">
+            {{ t('btnDone') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 6. 网页左下角快捷导航 (BACK, PARENT & HOME) -->
     <!-- ========================================== -->
     <div 
       class="fixed bottom-5 left-5 z-40 flex items-center gap-2 select-none transition-all duration-300"
@@ -808,12 +964,12 @@
         :disabled="isRoot && viewMode === 'library' && navHistory.length === 0"
         :class="isRoot && viewMode === 'library' && navHistory.length === 0 ? 'opacity-40 cursor-not-allowed bg-zinc-900/60 text-zinc-500' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
         class="flex items-center gap-1.5 px-3.5 py-2.5 backdrop-blur-md border border-zinc-700/80 shadow-2xl rounded-xl text-xs font-semibold transition-all"
-        title="返回上一个所访问的页面"
+        :title="t('btnBackTitle')"
       >
         <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
         </svg>
-        <span>返回</span>
+        <span>{{ t('btnBack') }}</span>
       </button>
 
       <!-- 2. 进入上一层目录 -->
@@ -823,12 +979,12 @@
         :disabled="isRoot"
         :class="isRoot ? 'opacity-40 cursor-not-allowed bg-zinc-900/60 text-zinc-500' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
         class="flex items-center gap-1.5 px-3.5 py-2.5 backdrop-blur-md border border-zinc-700/80 shadow-2xl rounded-xl text-xs font-semibold transition-all"
-        title="进入上一层目录"
+        :title="t('btnParentTitle')"
       >
         <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
         </svg>
-        <span>上一级</span>
+        <span>{{ t('btnParent') }}</span>
       </button>
 
       <!-- 3. 回到书架首页 -->
@@ -836,18 +992,19 @@
         @click="goHome"
         :class="(isRoot && viewMode === 'library' && !searchQuery) ? 'bg-zinc-900/70 text-zinc-400' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
         class="flex items-center gap-1.5 px-3.5 py-2.5 backdrop-blur-md border border-zinc-700/80 shadow-2xl rounded-xl text-xs font-semibold transition-all"
-        title="回到书架首页"
+        :title="t('btnHomeTitle')"
       >
         <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
         </svg>
-        <span>主页</span>
+        <span>{{ t('btnHome') }}</span>
       </button>
     </div>
 
   </div>
 
   <!-- Custom Scripts -->
+  <script src="/static/js/i18n.js"></script>
   <script src="/static/js/touch.js"></script>
   <script src="/static/js/app.js"></script>
 </body>

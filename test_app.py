@@ -44,11 +44,16 @@ for page_num in [1, 2, 3]:
 doc.save(str(pdf_file))
 doc.close()
 
+# 4. Create a dummy video file
+video_file = SAMPLE_DIR / "Sample Clip.mp4"
+video_file.write_bytes(b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00isommp42\x00\x00\x00\x08free")
+
 print("Sample test data successfully generated in:", SAMPLE_DIR)
 
 # Run FastAPI tests using TestClient
 from fastapi.testclient import TestClient
 from backend.app import app
+from backend.utils import encode_path
 
 client = TestClient(app)
 
@@ -74,22 +79,35 @@ shelf_encoded = res_browse_root.json()["bookshelves"][-1]["encoded_path"]
 res_browse_sub = client.get(f"/api/library/browse?encoded_path={shelf_encoded}")
 assert res_browse_sub.status_code == 200
 data_sub = res_browse_sub.json()
-print("✓ /api/library/browse (sub) found comics:", len(data_sub["comics"]), "folders:", len(data_sub["folders"]))
-assert len(data_sub["comics"]) >= 2  # Folder comic + CBZ + PDF
+print("✓ /api/library/browse (sub) found items (comics/videos):", len(data_sub["comics"]), "folders:", len(data_sub["folders"]))
+assert len(data_sub["comics"]) >= 3  # Folder comic + CBZ + PDF + Video
 
-# Test comic details
+# Test bookshelf boundary security (attempting to browse parent directory of bookshelf root)
+parent_encoded = encode_path(str(SAMPLE_DIR.parent))
+res_outside = client.get(f"/api/library/browse?encoded_path={parent_encoded}")
+assert res_outside.status_code == 403, f"Expected 403 for unauthorized path but got: {res_outside.status_code}"
+print("✓ Bookshelf boundary security verified (forbidden from browsing outside configured bookshelf)")
+
+# Test comic & video details
 for comic in data_sub["comics"]:
     c_id = comic["id"]
     res_details = client.get(f"/api/comic/details?comic_id={c_id}")
     assert res_details.status_code == 200
     info = res_details.json()
-    print(f"✓ Comic details for '{info['title']}' ({info['type']}): {info['total_pages']} pages")
+    print(f"✓ Details for '{info['title']}' ({info['type']}): {info['total_pages']} pages/files")
     
     # Test natural sorting for folder comic (page_1, page_2, page_3, page_10)
     if info['type'] == 'folder':
         page_names = [p['page_name'] for p in info['pages']]
         assert page_names == ['page_1.png', 'page_2.png', 'page_3.png', 'page_10.png'], f"Sorting failed: {page_names}"
         print("✓ Natural sorting verified correctly:", page_names)
+
+    if info['type'] == 'video':
+        # Test video streaming endpoint
+        res_vid = client.get(f"/api/video/stream?comic_id={c_id}", headers={"Range": "bytes=0-10"})
+        assert res_vid.status_code in [200, 206]
+        print("✓ Video stream range request verified for video")
+        continue
 
     # Test get page image (normal and optimized)
     res_page = client.get(f"/api/comic/page?comic_id={c_id}&page_index=0")

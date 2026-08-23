@@ -70,6 +70,25 @@ createApp({
       preloadPages();
     };
 
+    // Language / i18n State
+    const currentLang = ref(localStorage.getItem('comic_reader_lang') || 'zh');
+
+    const t = (key, params = {}) => {
+      const dict = (typeof i18n !== 'undefined' && i18n[currentLang.value]) ? i18n[currentLang.value] : (typeof i18n !== 'undefined' ? i18n.zh : {});
+      let text = dict[key] || key;
+      if (params && typeof params === 'object') {
+        Object.keys(params).forEach(p => {
+          text = text.replace(new RegExp(`\\{${p}\\}`, 'g'), params[p]);
+        });
+      }
+      return text;
+    };
+
+    const setLanguage = (lang) => {
+      currentLang.value = lang;
+      localStorage.setItem('comic_reader_lang', lang);
+    };
+
     // Toggle Weak Network Optimization Mode
     const toggleWeakNetworkMode = () => {
       weakNetworkMode.value = !weakNetworkMode.value;
@@ -88,6 +107,8 @@ createApp({
 
     // Load App Settings from LocalStorage or Server
     const loadSettings = () => {
+      const savedLang = localStorage.getItem('comic_reader_lang');
+      if (savedLang) currentLang.value = savedLang;
       const savedMode = localStorage.getItem('comic_reading_mode');
       if (savedMode) readingMode.value = savedMode;
       const savedDir = localStorage.getItem('comic_reading_dir');
@@ -97,6 +118,7 @@ createApp({
     };
 
     const saveSettings = () => {
+      localStorage.setItem('comic_reader_lang', currentLang.value);
       localStorage.setItem('comic_reading_mode', readingMode.value);
       localStorage.setItem('comic_reading_dir', readingDirection.value);
       localStorage.setItem('comic_page_spread', pageSpread.value);
@@ -326,9 +348,18 @@ createApp({
         return;
       }
       if (!isRoot.value) {
-        if (currentDirectory.value && currentDirectory.value.encoded_parent_path) {
-          loadLibrary(currentDirectory.value.encoded_parent_path);
-        } else if (breadcrumbs.value && breadcrumbs.value.length > 1) {
+        if (currentDirectory.value) {
+          // If server returned an encoded parent path (which is "" if at bookshelf root)
+          if (currentDirectory.value.encoded_parent_path !== undefined && currentDirectory.value.encoded_parent_path !== null) {
+            loadLibrary(currentDirectory.value.encoded_parent_path);
+            return;
+          }
+          if (currentDirectory.value.is_bookshelf_root) {
+            loadLibrary('');
+            return;
+          }
+        }
+        if (breadcrumbs.value && breadcrumbs.value.length > 1) {
           const parentCrumb = breadcrumbs.value[breadcrumbs.value.length - 2];
           loadLibrary(parentCrumb.encoded_path);
         } else {
@@ -699,7 +730,10 @@ createApp({
       toggleFullscreen,
       toggleReadingMode,
       toggleReadingDirection,
-      handleWebtoonScroll
+      handleWebtoonScroll,
+      currentLang,
+      t,
+      setLanguage
     };
   }
 }).mount('#app');

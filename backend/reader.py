@@ -11,6 +11,7 @@ from .utils import (
     IMAGE_EXTENSIONS,
     ARCHIVE_EXTENSIONS,
     PDF_EXTENSIONS,
+    VIDEO_EXTENSIONS,
     natural_sort_key,
     encode_path
 )
@@ -26,15 +27,87 @@ def get_cache_path(key: str, ext: str = ".webp") -> Path:
     return sub_dir / f"{hash_key}{ext}"
 
 
+def extract_video_first_frame(video_path: Path) -> Optional[bytes]:
+    """Extract first frame of a video using ffmpeg CLI or fallback."""
+    import subprocess
+    import shutil
+
+    ffmpeg_bin = shutil.which("ffmpeg")
+    if not ffmpeg_bin:
+        # Check common locations
+        for p in ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"]:
+            if os.path.exists(p):
+                ffmpeg_bin = p
+                break
+
+    if ffmpeg_bin:
+        try:
+            # Run ffmpeg to extract the first frame (ss 00:00:00.5) to pipe as jpeg
+            cmd = [
+                ffmpeg_bin,
+                "-ss", "00:00:00.5",
+                "-i", str(video_path),
+                "-vframes", "1",
+                "-f", "image2pipe",
+                "-vcodec", "mjpeg",
+                "-"
+            ]
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            out, _ = proc.communicate(timeout=5)
+            if out and len(out) > 500:
+                return out
+        except Exception as e:
+            print(f"ffmpeg frame extract failed: {e}")
+
+    # Fallback: create a stylish video placeholder image with PIL
+    try:
+        from PIL import ImageDraw, ImageFont
+        img = Image.new("RGB", (640, 360), color=(24, 24, 27))
+        draw = ImageDraw.Draw(img)
+        # Draw a video play button triangle
+        draw.polygon([(290, 150), (290, 210), (350, 180)], fill=(59, 130, 246))
+        # Draw video extension text
+        ext_text = video_path.suffix.upper()[1:]
+        draw.text((320, 240), f"{ext_text} VIDEO", fill=(161, 161, 170), anchor="mm")
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=85)
+        return buf.getvalue()
+    except Exception:
+        return None
+
+
 class ComicReader:
     @staticmethod
     def get_comic_info(path_str: str) -> Dict[str, Any]:
-        """Inspect a file or folder and return its comic structure (pages list, type, total)."""
+        """Inspect a file or folder and return its structure (pages list, type, total)."""
         target = Path(path_str)
         if not target.exists():
             raise FileNotFoundError(f"Target not found: {path_str}")
 
         encoded_comic_path = encode_path(str(target.resolve()))
+
+        # Case 0: Video Media File
+        if target.is_file() and target.suffix.lower() in VIDEO_EXTENSIONS:
+            pages = [
+                {
+                    "page_index": 0,
+                    "page_name": target.name,
+                    "url": f"/api/video/stream?comic_id={encoded_comic_path}",
+                    "thumbnail_url": f"/api/comic/thumbnail?comic_id={encoded_comic_path}&page_index=0",
+                    "is_video": True
+                }
+            ]
+            return {
+                "id": encoded_comic_path,
+                "title": target.stem,
+                "type": "video",
+                "path": str(target),
+                "total_pages": 1,
+                "pages": pages,
+                "cover_url": f"/api/comic/thumbnail?comic_id={encoded_comic_path}&page_index=0",
+                "video_url": f"/api/video/stream?comic_id={encoded_comic_path}",
+                "is_video": True
+            }
 
         # Case 1: PDF Document
         if target.is_file() and target.suffix.lower() in PDF_EXTENSIONS:
@@ -68,7 +141,6 @@ class ComicReader:
             try:
                 with zipfile.ZipFile(str(target), 'r') as zf:
                     all_names = zf.namelist()
-                    # Filter for image files, ignoring macOS metadata __MACOSX/ or hidden files
                     img_names = [
                         n for n in all_names
                         if not n.startswith("__MACOSX/") and not Path(n).name.startswith(".")
@@ -177,6 +249,13 @@ class ComicReader:
                     media_type = "image/avif"
                 return data, media_type
 
+        # Video file first frame / cover
+        if target.is_file() and target.suffix.lower() in VIDEO_EXTENSIONS:
+            frame_bytes = extract_video_first_frame(target)
+            if frame_bytes:
+                return frame_bytes, "image/jpeg"
+            raise ValueError("Could not extract frame from video")
+
         # Folder images
         if target.is_dir():
             img_files = [
@@ -258,7 +337,11 @@ class ComicReader:
             with open(cache_file, "rb") as f:
                 return f.read(), "image/webp"
 
-        raw_bytes, _ = ComicReader.get_page_bytes(path_str, page_index)
+        raw_bytes, media_type = ComicReader.get_page_bytes(path_str, page_index)
+
+        # Do not convert animated GIF or video frame
+        if media_type == "image/gif":
+            return raw_bytes, "image/gif"
 
         try:
             with Image.open(io.BytesIO(raw_bytes)) as im:
