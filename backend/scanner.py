@@ -1,0 +1,154 @@
+import os
+import zipfile
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+
+from .utils import (
+    IMAGE_EXTENSIONS,
+    ARCHIVE_EXTENSIONS,
+    PDF_EXTENSIONS,
+    SUPPORTED_EXTENSIONS,
+    natural_sort_key,
+    encode_path
+)
+
+
+class LibraryScanner:
+    @staticmethod
+    def is_comic_folder(folder_path: Path) -> bool:
+        """Check if folder directly contains images (making it a comic issue/album)."""
+        try:
+            for entry in folder_path.iterdir():
+                if entry.is_file() and entry.suffix.lower() in IMAGE_EXTENSIONS and not entry.name.startswith("."):
+                    return True
+        except PermissionError:
+            return False
+        return False
+
+    @staticmethod
+    def is_archive_or_pdf(file_path: Path) -> bool:
+        """Check if file is a supported archive or PDF."""
+        return file_path.is_file() and file_path.suffix.lower() in (ARCHIVE_EXTENSIONS | PDF_EXTENSIONS) and not file_path.name.startswith(".")
+
+    @classmethod
+    def find_first_cover_target(cls, folder_path: Path, max_depth: int = 3) -> Optional[str]:
+        """Find the first readable comic/image target under a directory to use as a cover."""
+        if max_depth <= 0:
+            return None
+        try:
+            # Check if this folder itself is a comic folder
+            if cls.is_comic_folder(folder_path):
+                return str(folder_path.resolve())
+
+            # Check direct archive/pdf files
+            entries = sorted(list(folder_path.iterdir()), key=lambda x: natural_sort_key(x.name))
+            for entry in entries:
+                if cls.is_archive_or_pdf(entry):
+                    return str(entry.resolve())
+
+            # Recursively check subfolders
+            for entry in entries:
+                if entry.is_dir() and not entry.name.startswith("."):
+                    found = cls.find_first_cover_target(entry, max_depth - 1)
+                    if found:
+                        return found
+        except Exception:
+            pass
+        return None
+
+    @classmethod
+    def get_comic_page_count_fast(cls, target_path: Path) -> int:
+        """Quickly estimate or get page count without full parsing."""
+        try:
+            if target_path.is_dir():
+                return sum(1 for e in target_path.iterdir() if e.is_file() and e.suffix.lower() in IMAGE_EXTENSIONS and not e.name.startswith("."))
+            if target_path.suffix.lower() in ARCHIVE_EXTENSIONS:
+                with zipfile.ZipFile(str(target_path), 'r') as zf:
+                    return sum(1 for n in zf.namelist() if not n.startswith("__MACOSX/") and not Path(n).name.startswith(".") and Path(n).suffix.lower() in IMAGE_EXTENSIONS)
+            if target_path.suffix.lower() in PDF_EXTENSIONS:
+                import fitz
+                doc = fitz.open(str(target_path))
+                c = len(doc)
+                doc.close()
+                return c
+        except Exception:
+            return 0
+        return 0
+
+    @classmethod
+    def browse_directory(cls, dir_path_str: str) -> Dict[str, Any]:
+        """Browse a specific directory and return folders and comic files inside it."""
+        dir_path = Path(dir_path_str).resolve()
+        if not dir_path.exists() or not dir_path.is_dir():
+            raise FileNotFoundError(f"目录不存在: {dir_path_str}")
+
+        folders = []
+        comics = []
+
+        try:
+            entries = list(dir_path.iterdir())
+        except PermissionError:
+            return {"current_path": str(dir_path), "name": dir_path.name, "folders": [], "comics": []}
+
+        # Filter out hidden files / system directories
+        entries = [e for e in entries if not e.name.startswith(".") and not e.name.startswith("$")]
+        entries.sort(key=lambda x: natural_sort_key(x.name))
+
+        for entry in entries:
+            try:
+                if entry.is_dir():
+                    # If this directory directly contains images and no other subdirectories with comics, treat as comic
+                    sub_dirs = [s for s in entry.iterdir() if s.is_dir() and not s.name.startswith(".")]
+                    has_images = cls.is_comic_folder(entry)
+
+                    if has_images and len(sub_dirs) == 0:
+                        # Pure comic chapter/album
+                        page_count = sum(1 for e in entry.iterdir() if e.is_file() and e.suffix.lower() in IMAGE_EXTENSIONS and not e.name.startswith("."))
+                        encoded_id = encode_path(str(entry))
+                        comics.append({
+                            "id": encoded_id,
+                            "name": entry.name,
+                            "type": "folder",
+                            "path": str(entry),
+                            "page_count": page_count,
+                            "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
+                        })
+                    else:
+                        # Folder / Series
+                        cover_target = cls.find_first_cover_target(entry)
+                        cover_url = f"/api/comic/thumbnail?comic_id={encode_path(cover_target)}&page_index=0" if cover_target else None
+                        folders.append({
+                            "id": encode_path(str(entry)),
+                            "name": entry.name,
+                            "path": str(entry),
+                            "type": "directory",
+                            "has_images": has_images,
+                            "cover_url": cover_url
+                        })
+                elif cls.is_archive_or_pdf(entry):
+                    encoded_id = encode_path(str(entry))
+                    page_count = cls.get_comic_page_count_fast(entry)
+                    comic_type = "pdf" if entry.suffix.lower() in PDF_EXTENSIONS else "archive"
+                    comics.append({
+                        "id": encoded_id,
+                        "name": entry.name,
+                        "title": entry.stem,
+                        "type": comic_type,
+                        "ext": entry.suffix.lower(),
+                        "path": str(entry),
+                        "page_count": page_count,
+                        "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0" if page_count > 0 else None
+                    })
+            except Exception as e:
+                print(f"Error scanning entry {entry}: {e}")
+
+        return {
+            "current_path": str(dir_path),
+            "name": dir_path.name or str(dir_path),
+            "encoded_path": encode_path(str(dir_path)),
+            "parent_path": str(dir_path.parent) if dir_path.parent != dir_path else None,
+            "encoded_parent_path": encode_path(str(dir_path.parent)) if dir_path.parent != dir_path else None,
+            "folders": folders,
+            "comics": comics,
+            "total_items": len(folders) + len(comics)
+        }

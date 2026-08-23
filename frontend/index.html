@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>漫画与画册局域网浏览器</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- Custom Touch and Animation CSS -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-zinc-950 text-zinc-100 h-full flex flex-col overflow-hidden font-sans antialiased select-none">
+
+  <div id="app" class="h-full flex flex-col">
+    
+    <!-- ========================================== -->
+    <!-- 1. 书架/目录 浏览视图 (LIBRARY VIEW) -->
+    <!-- ========================================== -->
+    <div v-if="viewMode === 'library'" class="h-full flex flex-col">
+      
+      <!-- Top Navigation Bar -->
+      <header class="bg-zinc-900/90 backdrop-blur border-b border-zinc-800 px-4 py-3 sticky top-0 z-30 flex items-center justify-between gap-2 shadow-sm">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600/20 text-blue-400 font-bold shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+          </div>
+          <span class="font-bold text-lg tracking-tight hidden sm:inline">本地画册</span>
+          
+          <!-- Breadcrumbs -->
+          <nav class="flex items-center text-sm font-medium text-zinc-400 overflow-x-auto whitespace-nowrap scrollbar-none py-1">
+            <template v-for="(crumb, idx) in breadcrumbs" :key="idx">
+              <span v-if="idx > 0" class="mx-1 text-zinc-600">/</span>
+              <button 
+                @click="navigateToCrumb(crumb)"
+                :class="idx === breadcrumbs.length - 1 ? 'text-zinc-100 font-semibold' : 'text-zinc-400 hover:text-blue-400'"
+                class="transition-colors truncate max-w-[120px] sm:max-w-[200px]"
+              >
+                {{ crumb.name }}
+              </button>
+            </template>
+          </nav>
+        </div>
+
+        <!-- Right Header Actions -->
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- Search input on larger screens -->
+          <div class="relative hidden md:block w-48 lg:w-64">
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              placeholder="搜索漫画或目录..." 
+              class="w-full bg-zinc-800/80 border border-zinc-700 text-xs rounded-full py-1.5 pl-8 pr-3 text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors"
+            >
+            <svg class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+
+          <!-- Bookshelf Manager Button -->
+          <button 
+            @click="showBookshelfModal = true"
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            <span>书架管理</span>
+          </button>
+
+          <!-- LAN Info / QR Button -->
+          <button 
+            @click="showInfoModal = true"
+            title="局域网连接与平板访问"
+            class="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition-colors"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6">
+        
+        <!-- Loading State -->
+        <div v-if="loading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          <div v-for="n in 12" :key="n" class="skeleton aspect-[3/4] rounded-xl"></div>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="errorMsg" class="flex flex-col items-center justify-center py-16 text-center">
+          <div class="w-16 h-16 rounded-full bg-red-900/20 text-red-400 flex items-center justify-center mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-zinc-200 mb-1">加载遇到问题</h3>
+          <p class="text-sm text-zinc-400 max-w-md mb-4">{{ errorMsg }}</p>
+          <button @click="loadLibrary(currentPath ? btoa(currentPath) : '')" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-medium">重试</button>
+        </div>
+
+        <!-- Top Level Bookshelves View (Root) -->
+        <div v-else-if="isRoot">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
+              <span>已添加的书架目录</span>
+              <span class="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">{{ bookshelves.length }}</span>
+            </h2>
+          </div>
+
+          <div v-if="bookshelves.length === 0" class="text-center py-20 border-2 border-dashed border-zinc-800 rounded-2xl p-8">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-blue-900/20 text-blue-400 flex items-center justify-center mb-4">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+              </svg>
+            </div>
+            <h3 class="text-base font-semibold text-zinc-200 mb-1">暂无书架目录</h3>
+            <p class="text-sm text-zinc-400 mb-5 max-w-sm mx-auto">请点击上方“书架管理”添加您电脑上的漫画文件夹（例如 D:\Comics 或 ~/Pictures）</p>
+            <button @click="showBookshelfModal = true" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30">
+              立即添加书架目录
+            </button>
+          </div>
+
+          <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div 
+              v-for="shelf in bookshelves" 
+              :key="shelf.id"
+              @click="loadLibrary(shelf.encoded_path)"
+              class="comic-card group relative bg-zinc-900 border border-zinc-800/80 rounded-xl overflow-hidden cursor-pointer flex flex-col"
+            >
+              <div class="aspect-[3/4] bg-zinc-800/50 relative overflow-hidden flex items-center justify-center">
+                <img 
+                  v-if="shelf.cover_url" 
+                  :src="shelf.cover_url" 
+                  alt="" 
+                  loading="lazy"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                >
+                <div v-else class="text-zinc-600 flex flex-col items-center justify-center p-4 text-center">
+                  <svg class="w-12 h-12 mb-2 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                  </svg>
+                  <span class="text-xs text-zinc-500">文件夹</span>
+                </div>
+                <div class="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] font-semibold text-blue-400">
+                  书架
+                </div>
+              </div>
+              <div class="p-3 flex-1 flex flex-col justify-between">
+                <div>
+                  <h4 class="font-semibold text-sm text-zinc-100 group-hover:text-blue-400 transition-colors line-clamp-1" :title="shelf.name">{{ shelf.name }}</h4>
+                  <p class="text-[11px] text-zinc-500 truncate mt-0.5" :title="shelf.path">{{ shelf.path }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subdirectory Content (Folders + Comics) -->
+        <div v-else>
+          
+          <!-- Subfolders Section -->
+          <div v-if="filteredFolders.length > 0" class="mb-8">
+            <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+              </svg>
+              <span>子目录 ({{ filteredFolders.length }})</span>
+            </h3>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              <div 
+                v-for="folder in filteredFolders" 
+                :key="folder.id"
+                @click="openFolder(folder)"
+                class="comic-card group relative bg-zinc-900/90 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer flex flex-col"
+              >
+                <div class="aspect-[3/4] bg-zinc-800/40 relative overflow-hidden flex items-center justify-center">
+                  <img 
+                    v-if="folder.cover_url" 
+                    :src="folder.cover_url" 
+                    loading="lazy" 
+                    alt="" 
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  >
+                  <div v-else class="text-zinc-600 flex flex-col items-center justify-center p-4 text-center">
+                    <svg class="w-10 h-10 mb-2 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                    </svg>
+                    <span class="text-xs text-zinc-500">系列目录</span>
+                  </div>
+                  <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/60 backdrop-blur rounded text-[10px] font-medium text-zinc-300">
+                    目录
+                  </div>
+                </div>
+                <div class="p-2.5">
+                  <h4 class="font-medium text-xs text-zinc-200 group-hover:text-blue-400 transition-colors line-clamp-2" :title="folder.name">
+                    {{ folder.name }}
+                  </h4>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comics Section -->
+          <div v-if="filteredComics.length > 0">
+            <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+              <span>漫画与画册 ({{ filteredComics.length }})</span>
+            </h3>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              <div 
+                v-for="comic in filteredComics" 
+                :key="comic.id"
+                @click="openComic(comic)"
+                class="comic-card group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer flex flex-col"
+              >
+                <div class="aspect-[3/4] bg-zinc-800 relative overflow-hidden flex items-center justify-center">
+                  <img 
+                    v-if="comic.cover_url" 
+                    :src="comic.cover_url" 
+                    loading="lazy" 
+                    alt="" 
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  >
+                  <div v-else class="text-zinc-600 flex flex-col items-center justify-center p-4">
+                    <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="text-xs">无封面</span>
+                  </div>
+
+                  <!-- Type Badge -->
+                  <div class="absolute top-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
+                    {{ comic.type === 'pdf' ? 'PDF' : (comic.type === 'archive' ? 'ZIP' : '文件夹') }}
+                  </div>
+
+                  <!-- Page Count Badge -->
+                  <div v-if="comic.page_count" class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[10px] font-medium text-zinc-300">
+                    {{ comic.page_count }}P
+                  </div>
+                </div>
+
+                <div class="p-2.5">
+                  <h4 class="font-medium text-xs text-zinc-100 group-hover:text-blue-400 transition-colors line-clamp-2 leading-relaxed" :title="comic.name">
+                    {{ comic.name }}
+                  </h4>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty Directory View -->
+          <div v-if="filteredFolders.length === 0 && filteredComics.length === 0" class="text-center py-16 text-zinc-500">
+            <svg class="w-12 h-12 mx-auto mb-3 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+            </svg>
+            <p class="text-sm">此文件夹下未找到漫画、画册、ZIP或PDF文件</p>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. 触屏漫画阅读器视图 (READER VIEW) -->
+    <!-- ========================================== -->
+    <div v-if="viewMode === 'reader'" class="h-full w-full bg-black relative flex flex-col select-none overflow-hidden">
+      
+      <!-- Top HUD Floating Bar -->
+      <div 
+        :class="{ 'hud-top-hidden': !showHud }" 
+        class="hud-bar absolute top-0 left-0 right-0 z-40 bg-zinc-950/85 backdrop-blur-md border-b border-zinc-800/80 px-4 py-2.5 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-3 min-w-0">
+          <button 
+            @click="closeReader" 
+            class="p-1.5 -ml-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors"
+            title="退出阅读"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          
+          <div class="truncate">
+            <h2 class="text-sm font-semibold text-zinc-100 truncate" :title="currentComic?.title">
+              {{ currentComic?.title }}
+            </h2>
+            <div class="text-[11px] text-zinc-400 flex items-center gap-2">
+              <span>第 {{ currentPageIndex + 1 }} / {{ currentComic?.total_pages }} 页</span>
+              <span class="text-zinc-600">•</span>
+              <span>{{ readingMode === 'paged' ? (readingDirection === 'rtl' ? '日漫模式(RTL)' : '分页模式(LTR)') : '条漫瀑布流' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode & Orientation Toggles -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <!-- Reading Mode (Paged vs Scroll) -->
+          <button 
+            @click="toggleReadingMode" 
+            :title="readingMode === 'paged' ? '切换为条漫瀑布流' : '切换为分页模式'"
+            class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-1 text-xs"
+          >
+            <svg v-if="readingMode === 'paged'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7"></path>
+            </svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+            <span class="hidden sm:inline">{{ readingMode === 'paged' ? '分页' : '条漫' }}</span>
+          </button>
+
+          <!-- RTL / LTR Direction toggle for paged mode -->
+          <button 
+            v-if="readingMode === 'paged'"
+            @click="toggleReadingDirection"
+            :title="readingDirection === 'rtl' ? '切换为左至右(LTR)' : '切换为右至左日漫(RTL)'"
+            class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors text-xs font-semibold"
+          >
+            {{ readingDirection === 'rtl' ? 'RTL' : 'LTR' }}
+          </button>
+
+          <!-- Fullscreen Toggle -->
+          <button 
+            @click="toggleFullscreen" 
+            class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+            title="全屏切换"
+          >
+            <svg v-if="!isFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5m-6 11l-5 5m0 0v-4m0 4h4m11-5l5 5m0 0h-4m4 0v-4"></path>
+            </svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Reader Area -->
+      <div class="flex-1 w-full h-full relative overflow-hidden flex items-center justify-center">
+        
+        <!-- Paged Mode Viewport -->
+        <div v-if="readingMode === 'paged'" class="reader-viewport w-full h-full">
+          <div class="reader-image-container">
+            <img 
+              v-if="currentComic?.pages[currentPageIndex]"
+              :src="currentComic.pages[currentPageIndex].url" 
+              :alt="`Page ${currentPageIndex + 1}`" 
+              class="reader-img"
+            >
+          </div>
+
+          <!-- Tap Touch Zones (Left: Prev, Center: Toggle HUD, Right: Next) -->
+          <div class="touch-zone-container">
+            <div class="touch-zone-left" @click="prevPage" title="上一页"></div>
+            <div class="touch-zone-center" @click="toggleHud" title="开关菜单"></div>
+            <div class="touch-zone-right" @click="nextPage" title="下一页"></div>
+          </div>
+        </div>
+
+        <!-- Webtoon Waterfall Continuous Scroll Mode -->
+        <div 
+          v-else 
+          @scroll="handleWebtoonScroll"
+          class="webtoon-scroll-container py-12"
+        >
+          <div 
+            v-for="(page, idx) in currentComic?.pages" 
+            :key="idx" 
+            :id="`webtoon-page-${idx}`"
+            class="webtoon-item"
+          >
+            <img 
+              :src="page.url" 
+              loading="lazy" 
+              :alt="`Page ${idx + 1}`"
+              class="webtoon-img"
+            >
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom HUD Floating Bar -->
+      <div 
+        :class="{ 'hud-bottom-hidden': !showHud }" 
+        class="hud-bar absolute bottom-0 left-0 right-0 z-40 bg-zinc-950/85 backdrop-blur-md border-t border-zinc-800/80 px-4 py-3 flex flex-col gap-2"
+      >
+        <!-- Page Slider & Jump -->
+        <div class="flex items-center gap-3 max-w-2xl mx-auto w-full">
+          <button 
+            @click="prevPageInternal" 
+            :disabled="currentPageIndex <= 0"
+            class="p-1.5 text-zinc-300 disabled:opacity-30 hover:text-white rounded transition-colors"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+
+          <span class="text-xs text-zinc-400 w-10 text-right font-mono">{{ currentPageIndex + 1 }}</span>
+
+          <input 
+            type="range" 
+            min="0" 
+            :max="Math.max(0, (currentComic?.total_pages || 1) - 1)" 
+            :value="currentPageIndex"
+            @input="goToPage(parseInt($event.target.value))"
+            class="flex-1 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+          >
+
+          <span class="text-xs text-zinc-400 w-10 text-left font-mono">{{ currentComic?.total_pages }}</span>
+
+          <button 
+            @click="nextPageInternal" 
+            :disabled="currentPageIndex >= (currentComic?.total_pages || 1) - 1"
+            class="p-1.5 text-zinc-300 disabled:opacity-30 hover:text-white rounded transition-colors"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
+
+          <!-- Drawer Toggle -->
+          <button 
+            @click="showThumbnailDrawer = !showThumbnailDrawer"
+            :class="showThumbnailDrawer ? 'text-blue-400 bg-blue-500/20' : 'text-zinc-400 hover:text-white'"
+            class="p-1.5 rounded-lg transition-colors ml-1"
+            title="查看所有缩略图"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Thumbnail Strip Drawer -->
+        <div 
+          v-if="showThumbnailDrawer" 
+          class="thumb-strip flex gap-2 overflow-x-auto py-2 px-1 max-w-3xl mx-auto w-full scrollbar-thin"
+        >
+          <div 
+            v-for="(p, idx) in currentComic?.pages" 
+            :key="idx"
+            @click="goToPage(idx)"
+            :class="{ 'active': idx === currentPageIndex }"
+            class="thumb-item shrink-0 w-16 h-24 rounded border-2 border-transparent bg-zinc-800 overflow-hidden cursor-pointer relative"
+          >
+            <img :src="p.thumbnail_url" loading="lazy" class="w-full h-full object-cover">
+            <span class="absolute bottom-0 inset-x-0 bg-black/75 text-[9px] text-center font-mono py-0.5">{{ idx + 1 }}</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. 书架管理弹窗 (BOOKSHELF MODAL) -->
+    <!-- ========================================== -->
+    <div v-if="showBookshelfModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-5 shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <h3 class="font-bold text-base text-zinc-100 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+            <span>书架目录管理</span>
+          </h3>
+          <button @click="showBookshelfModal = false" class="text-zinc-400 hover:text-white p-1 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="py-4 overflow-y-auto space-y-4">
+          <!-- Add New Path Section -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">添加本地电脑文件夹路径</label>
+            <div class="space-y-2">
+              <input 
+                v-model="newShelfPath" 
+                type="text" 
+                placeholder="例如: D:\Comics 或 /Users/name/Pictures" 
+                class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+              >
+              <div class="flex gap-2">
+                <input 
+                  v-model="newShelfName" 
+                  type="text" 
+                  placeholder="书架名称 (可选，默认使用文件夹名)" 
+                  class="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+                >
+                <button 
+                  @click="handleAddBookshelf" 
+                  :disabled="addingShelf || !newShelfPath.trim()"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-xl text-sm font-semibold transition-colors"
+                >
+                  {{ addingShelf ? '添加中...' : '添加' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Root Directory Pickers -->
+            <div v-if="systemDrives.length > 0" class="mt-2.5">
+              <span class="text-[11px] text-zinc-400 mb-1 block">快捷填入系统根目录/盘符：</span>
+              <div class="flex flex-wrap gap-1.5">
+                <button 
+                  v-for="drive in systemDrives" 
+                  :key="drive.path"
+                  @click="newShelfPath = drive.path"
+                  class="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs transition-colors"
+                >
+                  {{ drive.name }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Existing Bookshelves List -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">已添加的书架 ({{ bookshelves.length }})</label>
+            <div v-if="bookshelves.length === 0" class="text-xs text-zinc-500 py-3 text-center bg-zinc-800/40 rounded-xl">
+              暂无已添加书架
+            </div>
+            <div v-else class="space-y-2 max-h-48 overflow-y-auto pr-1">
+              <div 
+                v-for="shelf in bookshelves" 
+                :key="shelf.id"
+                class="flex items-center justify-between p-2.5 bg-zinc-800/60 rounded-xl border border-zinc-700/50"
+              >
+                <div class="min-w-0 flex-1 pr-2">
+                  <h4 class="text-xs font-semibold text-zinc-200 truncate">{{ shelf.name }}</h4>
+                  <p class="text-[11px] text-zinc-400 font-mono truncate">{{ shelf.path }}</p>
+                </div>
+                <button 
+                  @click="handleDeleteBookshelf(shelf.id)"
+                  class="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-zinc-700 rounded-lg transition-colors"
+                  title="移除书架"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-zinc-800 flex justify-end">
+          <button @click="showBookshelfModal = false" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-medium">
+            完成
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 4. 局域网访问与信息弹窗 (LAN INFO MODAL) -->
+    <!-- ========================================== -->
+    <div v-if="showInfoModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <h3 class="font-bold text-base text-zinc-100 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <span>局域网多设备访问</span>
+          </h3>
+          <button @click="showInfoModal = false" class="text-zinc-400 hover:text-white p-1 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="py-4 space-y-3">
+          <p class="text-xs text-zinc-300">
+            请确保平板、手机与电脑连接在同一个 Wi-Fi / 局域网下，在手机或平板浏览器中输入以下地址即可浏览：
+          </p>
+
+          <div class="space-y-2">
+            <div 
+              v-for="url in systemInfo.lan_urls" 
+              :key="url"
+              class="p-3 bg-zinc-800/80 rounded-xl border border-zinc-700 flex items-center justify-between"
+            >
+              <span class="font-mono text-sm text-blue-400 font-semibold select-all">{{ url }}</span>
+              <a :href="url" target="_blank" class="text-xs text-zinc-400 hover:text-zinc-200 underline">打开</a>
+            </div>
+          </div>
+
+          <div class="bg-blue-950/30 border border-blue-800/50 rounded-xl p-3 text-xs text-blue-200 space-y-1">
+            <div class="font-semibold flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span>触屏手势操作提示：</span>
+            </div>
+            <ul class="list-disc list-inside text-zinc-300 space-y-0.5 pl-1">
+              <li>左右滑动或点击两侧区域即可翻页</li>
+              <li>点击屏幕中央唤出顶部与底部控制栏</li>
+              <li>双击或两指张开可放大细节</li>
+              <li>支持切换横向翻页与纵向条漫模式</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-zinc-800 flex justify-end">
+          <button @click="showInfoModal = false" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold">
+            知道了
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Custom Scripts -->
+  <script src="/static/js/touch.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
