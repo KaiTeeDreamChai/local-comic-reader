@@ -52,7 +52,7 @@ source venv/bin/activate   # Windows 上运行: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 3. 启动服务
-uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
+uvicorn backend.app:app --host 0.0.0.0 --port 7891 --reload
 ```
 
 ---
@@ -60,7 +60,7 @@ uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
 ## 📱 平板 / 手机（iPad / Android）局域网连接方法
 
 1. 确保手机/平板与运行该程序的电脑连接在同一个 **Wi-Fi（局域网）** 下。
-2. 在电脑端网页点击右上角的 **“设备连接”** 图标（手机图标），查看本机局域网地址（例如 `http://192.168.1.100:8000`）。
+2. 在电脑端网页点击右上角的 **“设备连接”** 图标（手机图标），查看本机局域网地址（例如 `http://192.168.1.100:7891`）。
 3. 在 iPad / 手机的 Safari 或 Chrome 浏览器中输入该网址即可。
 4. **推荐**：在 iPad 的 Safari 中点击“分享” -> “添加到主屏幕”，即可像原生 App 一样全屏无边框浏览。
 

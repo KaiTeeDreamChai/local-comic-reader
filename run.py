@@ -1,5 +1,6 @@
 import sys
 import os
+import socket
 import subprocess
 import webbrowser
 import time
@@ -9,6 +10,8 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent
 os.chdir(ROOT_DIR)
 
+DEFAULT_PORT = 7891
+
 REQUIRED_PACKAGES = {
     "fastapi": "fastapi",
     "uvicorn": "uvicorn",
@@ -17,6 +20,25 @@ REQUIRED_PACKAGES = {
     "natsort": "natsort",
     "multipart": "python-multipart"
 }
+
+
+def is_port_available(port: int, host: str = "0.0.0.0") -> bool:
+    """Check if a specific port is free to bind."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind((host, port))
+            return True
+        except OSError:
+            return False
+
+
+def find_available_port(start_port: int = DEFAULT_PORT, max_tries: int = 100) -> int:
+    """Find the next available port starting from start_port."""
+    for port in range(start_port, start_port + max_tries):
+        if is_port_available(port):
+            return port
+    return start_port
 
 
 def check_and_install_dependencies():
@@ -49,14 +71,18 @@ def start_server():
     from backend.utils import get_local_ips
     import uvicorn
 
-    port = 8000
+    port = find_available_port(DEFAULT_PORT)
+    if port != DEFAULT_PORT:
+        print(f"\n[提示] 默认端口 {DEFAULT_PORT} 已被占用，已自动递增切换到可用端口: {port}")
+
+    os.environ["PORT"] = str(port)
     ips = get_local_ips()
 
     print("\n" + "=" * 60)
     print("      本地漫画与画册局域网浏览器 (Local Comic Reader)")
     print("=" * 60)
     print(" [✓] 服务已成功启动！\n")
-    print(" 💻 本机电脑访问地址:")
+    print(f" 💻 本机电脑访问地址 (端口: {port}):")
     print(f"     👉 http://127.0.0.1:{port} 或 http://localhost:{port}\n")
     print(" 📱 局域网平板/手机 (iPad / Android) 访问地址 (需连接同一 Wi-Fi):")
     for ip in ips:

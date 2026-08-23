@@ -38,7 +38,7 @@ class SettingsUpdate(BaseModel):
 
 @app.get("/api/info")
 def get_system_info():
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 7891))
     ips = get_local_ips()
     urls = [f"http://{ip}:{port}" for ip in ips]
     return {
