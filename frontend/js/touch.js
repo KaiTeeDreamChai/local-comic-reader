@@ -1,5 +1,5 @@
 /**
- * Touch and Gesture Handler for Comic Reader
+ * Ultra-Responsive Touch, Pinch-to-Zoom and Gesture Controller for Mobile / Android Chrome
  */
 class TouchController {
   constructor(element, options = {}) {
@@ -11,8 +11,9 @@ class TouchController {
     this.onZoomChange = options.onZoomChange || (() => {});
 
     this.scale = 1;
+    this.baseScale = 1;
     this.minScale = 1;
-    this.maxScale = 3.5;
+    this.maxScale = 4.0;
     this.translateX = 0;
     this.translateY = 0;
 
@@ -27,55 +28,64 @@ class TouchController {
     this.lastTapTime = 0;
     this.tapTimeout = null;
 
+    this.boundTouchStart = this.handleTouchStart.bind(this);
+    this.boundTouchMove = this.handleTouchMove.bind(this);
+    this.boundTouchEnd = this.handleTouchEnd.bind(this);
+    this.boundTouchCancel = this.handleTouchEnd.bind(this);
+
     this.init();
   }
 
   init() {
-    this.el.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
-    this.el.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
-    this.el.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
-    this.el.addEventListener('touchcancel', this.handleTouchEnd.bind(this), { passive: false });
+    // Note: { passive: false } is mandatory to allow e.preventDefault() for pinch-zoom on Chrome
+    this.el.addEventListener('touchstart', this.boundTouchStart, { passive: false });
+    this.el.addEventListener('touchmove', this.boundTouchMove, { passive: false });
+    this.el.addEventListener('touchend', this.boundTouchEnd, { passive: false });
+    this.el.addEventListener('touchcancel', this.boundTouchCancel, { passive: false });
   }
 
-  getDistance(touches) {
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
+  getDistance(t1, t2) {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
     return Math.hypot(dx, dy);
   }
 
   handleTouchStart(e) {
     if (e.touches.length === 2) {
-      // Pinch to zoom start
+      // Two-finger pinch start
       e.preventDefault();
       this.isPinching = true;
       this.isDragging = false;
-      this.initialDistance = this.getDistance(e.touches);
+      this.baseScale = this.scale;
+      this.initialDistance = this.getDistance(e.touches[0], e.touches[1]);
     } else if (e.touches.length === 1) {
+      this.isPinching = false;
       this.startX = e.touches[0].clientX;
       this.startY = e.touches[0].clientY;
       this.currentX = this.startX;
       this.currentY = this.startY;
-      this.isDragging = this.scale > 1; // only drag if zoomed in
+      this.isDragging = this.scale > 1.05;
     }
   }
 
   handleTouchMove(e) {
-    if (this.isPinching && e.touches.length === 2) {
+    if (this.isPinching && e.touches.length >= 2) {
       e.preventDefault();
-      const currentDist = this.getDistance(e.touches);
-      const ratio = currentDist / (this.initialDistance || 1);
-      let newScale = this.scale * ratio;
-      newScale = Math.max(this.minScale, Math.min(this.maxScale, newScale));
-      
-      this.scale = newScale;
-      this.initialDistance = currentDist;
-      this.updateTransform();
-      this.onZoomChange(this.scale);
+      const currentDist = this.getDistance(e.touches[0], e.touches[1]);
+      if (this.initialDistance > 0) {
+        const ratio = currentDist / this.initialDistance;
+        let newScale = this.baseScale * ratio;
+        newScale = Math.max(this.minScale, Math.min(this.maxScale, newScale));
+        this.scale = newScale;
+        this.updateTransform();
+        this.onZoomChange(this.scale);
+      }
     } else if (e.touches.length === 1) {
       this.currentX = e.touches[0].clientX;
       this.currentY = e.touches[0].clientY;
 
-      if (this.scale > 1 && this.isDragging) {
+      if (this.scale > 1.05) {
+        // Drag / Pan when zoomed in
         e.preventDefault();
         const dx = this.currentX - this.startX;
         const dy = this.currentY - this.startY;
@@ -92,36 +102,42 @@ class TouchController {
     if (this.isPinching) {
       if (e.touches.length < 2) {
         this.isPinching = false;
-        if (this.scale <= 1.05) {
+        if (this.scale <= 1.08) {
           this.resetZoom();
+        } else if (e.touches.length === 1) {
+          this.startX = e.touches[0].clientX;
+          this.startY = e.touches[0].clientY;
+          this.currentX = this.startX;
+          this.currentY = this.startY;
         }
       }
       return;
     }
 
     if (e.changedTouches.length === 1) {
+      const touch = e.changedTouches[0];
       const deltaX = this.currentX - this.startX;
       const deltaY = this.currentY - this.startY;
       const dist = Math.hypot(deltaX, deltaY);
       const now = Date.now();
 
-      // Tap handling if hardly moved
-      if (dist < 10) {
+      // Tap handling if hardly moved (< 12px)
+      if (dist < 12) {
         if (now - this.lastTapTime < 300) {
-          // Double Tap
+          // Double Tap: Zoom in / Reset
           clearTimeout(this.tapTimeout);
           this.lastTapTime = 0;
-          this.handleDoubleTap(this.startX, this.startY);
+          this.handleDoubleTap(touch.clientX, touch.clientY);
         } else {
           this.lastTapTime = now;
           this.tapTimeout = setTimeout(() => {
-            this.onTap({ x: this.startX, y: this.startY });
-          }, 300);
+            this.onTap({ x: touch.clientX, y: touch.clientY });
+          }, 240);
         }
-      } else if (this.scale === 1) {
+      } else if (this.scale <= 1.05) {
         // Horizontal Swipe in unzoomed state
         const angle = Math.abs(Math.atan2(deltaY, deltaX) * (180 / Math.PI));
-        if (dist > 45 && (angle < 30 || angle > 150)) {
+        if (dist > 40 && (angle < 35 || angle > 145)) {
           if (deltaX < 0) {
             this.onSwipeLeft();
           } else {
@@ -156,11 +172,14 @@ class TouchController {
   updateTransform() {
     const target = this.el.querySelector('.reader-image-container');
     if (target) {
-      target.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+      target.style.transform = `translate3d(${this.translateX}px, ${this.translateY}px, 0) scale(${this.scale})`;
     }
   }
 
   destroy() {
-    // Cleanup if needed
+    this.el.removeEventListener('touchstart', this.boundTouchStart);
+    this.el.removeEventListener('touchmove', this.boundTouchMove);
+    this.el.removeEventListener('touchend', this.boundTouchEnd);
+    this.el.removeEventListener('touchcancel', this.boundTouchCancel);
   }
 }

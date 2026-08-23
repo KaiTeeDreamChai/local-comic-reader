@@ -462,10 +462,27 @@ createApp({
           if (readingDirection.value === 'rtl') nextPageInternal();
           else prevPageInternal();
         },
-        onTap: ({ x }) => {
+        onTap: ({ x, y }) => {
           const width = window.innerWidth;
-          const leftZone = width * 0.3;
-          const rightZone = width * 0.7;
+          const height = window.innerHeight;
+
+          // 1. Single tap on the TOP 25% area -> ALWAYS show top HUD with Exit button
+          if (y < height * 0.25) {
+            showHud.value = true;
+            resetHudTimer();
+            return;
+          }
+
+          // 2. Single tap on the BOTTOM 18% area -> ALWAYS show HUD with page slider
+          if (y > height * 0.82) {
+            showHud.value = true;
+            resetHudTimer();
+            return;
+          }
+
+          // 3. Left / Right / Center Tap Zones
+          const leftZone = width * 0.30;
+          const rightZone = width * 0.70;
 
           if (x < leftZone) {
             prevPage();

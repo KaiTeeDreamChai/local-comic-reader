@@ -338,12 +338,13 @@
         <div class="flex items-center gap-3 min-w-0">
           <button 
             @click="closeReader" 
-            class="p-1.5 -ml-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors"
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md transition-colors shrink-0"
             title="退出阅读"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
             </svg>
+            <span>退出</span>
           </button>
           
           <div class="truncate">
@@ -353,7 +354,7 @@
             <div class="text-[11px] text-zinc-400 flex items-center gap-2">
               <span>第 {{ currentPageIndex + 1 }} / {{ currentComic?.total_pages }} 页</span>
               <span class="text-zinc-600">•</span>
-              <span>{{ readingMode === 'paged' ? (readingDirection === 'rtl' ? '日漫模式(RTL)' : '分页模式(LTR)') : '条漫瀑布流' }}</span>
+              <span>{{ readingMode === 'paged' ? (readingDirection === 'rtl' ? '日漫(RTL)' : '分页(LTR)') : '条漫' }}</span>
             </div>
           </div>
         </div>
@@ -433,6 +434,13 @@
         
         <!-- Paged Mode Viewport -->
         <div v-if="readingMode === 'paged'" class="reader-viewport w-full h-full">
+          <!-- Top Screen Tap Zone: Click or tap top area to pop up top HUD with Exit button -->
+          <div 
+            @click.stop="showHud = true; resetHudTimer();" 
+            class="absolute top-0 inset-x-0 h-24 z-30 cursor-pointer pointer-events-auto"
+            title="点击顶部呼出菜单与退出按钮"
+          ></div>
+
           <div class="reader-image-container">
             <img 
               v-if="currentComic?.pages[currentPageIndex]"
@@ -441,21 +449,21 @@
               class="reader-img"
             >
           </div>
-
-          <!-- Tap Touch Zones (Left: Prev, Center: Toggle HUD, Right: Next) -->
-          <div class="touch-zone-container">
-            <div class="touch-zone-left" @click="prevPage" title="上一页"></div>
-            <div class="touch-zone-center" @click="toggleHud" title="开关菜单"></div>
-            <div class="touch-zone-right" @click="nextPage" title="下一页"></div>
-          </div>
         </div>
 
         <!-- Webtoon Waterfall Continuous Scroll Mode -->
         <div 
           v-else 
           @scroll="handleWebtoonScroll"
-          class="webtoon-scroll-container py-12"
+          class="webtoon-scroll-container py-12 relative"
         >
+          <!-- Top Screen Tap Zone for Webtoon Mode -->
+          <div 
+            @click.stop="showHud = true; resetHudTimer();" 
+            class="sticky top-0 inset-x-0 h-16 -mt-12 z-30 cursor-pointer pointer-events-auto"
+            title="点击顶部呼出菜单与退出按钮"
+          ></div>
+
           <div 
             v-for="(page, idx) in currentComic?.pages" 
             :key="idx" 
