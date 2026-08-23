@@ -629,54 +629,57 @@
               <span v-if="bookBookmarks.length > 0" class="text-[10px] bg-blue-500 text-white rounded-full px-1.5 py-0.2">{{ bookBookmarks.length }}</span>
             </button>
 
-            <!-- Font Size - -->
-            <button 
-              @click="changeNovelFontSize(-2)" 
-              title="缩小字体"
-              class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold w-7 h-7 flex items-center justify-center transition-colors"
-            >
-              A-
-            </button>
-            <span class="text-xs font-mono text-zinc-400 w-5 text-center">{{ novelFontSize }}</span>
-            <!-- Font Size + -->
-            <button 
-              @click="changeNovelFontSize(2)" 
-              title="放大字体"
-              class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold w-7 h-7 flex items-center justify-center transition-colors"
-            >
-              A+
-            </button>
+            <!-- Font Size & Theme Palette (Desktop / Tablet top bar) -->
+            <div class="hidden sm:flex items-center gap-1.5">
+              <!-- Font Size - -->
+              <button 
+                @click="changeNovelFontSize(-2)" 
+                title="缩小字体"
+                class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold w-7 h-7 flex items-center justify-center transition-colors"
+              >
+                A-
+              </button>
+              <span class="text-xs font-mono text-zinc-400 w-5 text-center">{{ novelFontSize }}</span>
+              <!-- Font Size + -->
+              <button 
+                @click="changeNovelFontSize(2)" 
+                title="放大字体"
+                class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold w-7 h-7 flex items-center justify-center transition-colors"
+              >
+                A+
+              </button>
 
-            <!-- Theme Switcher Palette -->
-            <div class="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-xl ml-1">
-              <!-- Day Light -->
-              <button 
-                @click="setNovelTheme('day')" 
-                :class="novelTheme === 'day' ? 'ring-2 ring-blue-500 scale-110' : 'opacity-70 hover:opacity-100'"
-                class="w-5 h-5 rounded-full bg-[#faf9f5] border border-zinc-300 transition-all"
-                :title="t('themeDay')"
-              ></button>
-              <!-- Sepia -->
-              <button 
-                @click="setNovelTheme('sepia')" 
-                :class="novelTheme === 'sepia' ? 'ring-2 ring-amber-500 scale-110' : 'opacity-70 hover:opacity-100'"
-                class="w-5 h-5 rounded-full bg-[#f6ebd4] border border-amber-300 transition-all"
-                :title="t('themeSepia')"
-              ></button>
-              <!-- Green Eye-Care -->
-              <button 
-                @click="setNovelTheme('green')" 
-                :class="novelTheme === 'green' ? 'ring-2 ring-emerald-500 scale-110' : 'opacity-70 hover:opacity-100'"
-                class="w-5 h-5 rounded-full bg-[#dceada] border border-emerald-300 transition-all"
-                :title="t('themeGreen')"
-              ></button>
-              <!-- Night Dark -->
-              <button 
-                @click="setNovelTheme('night')" 
-                :class="novelTheme === 'night' ? 'ring-2 ring-blue-500 scale-110' : 'opacity-70 hover:opacity-100'"
-                class="w-5 h-5 rounded-full bg-[#18181b] border border-zinc-700 transition-all"
-                :title="t('themeNight')"
-              ></button>
+              <!-- Theme Switcher Palette -->
+              <div class="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-xl ml-1">
+                <!-- Day Light -->
+                <button 
+                  @click="setNovelTheme('day')" 
+                  :class="novelTheme === 'day' ? 'ring-2 ring-blue-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                  class="w-5 h-5 rounded-full bg-[#faf9f5] border border-zinc-300 transition-all"
+                  :title="t('themeDay')"
+                ></button>
+                <!-- Sepia -->
+                <button 
+                  @click="setNovelTheme('sepia')" 
+                  :class="novelTheme === 'sepia' ? 'ring-2 ring-amber-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                  class="w-5 h-5 rounded-full bg-[#f6ebd4] border border-amber-300 transition-all"
+                  :title="t('themeSepia')"
+                ></button>
+                <!-- Green Eye-Care -->
+                <button 
+                  @click="setNovelTheme('green')" 
+                  :class="novelTheme === 'green' ? 'ring-2 ring-emerald-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                  class="w-5 h-5 rounded-full bg-[#dceada] border border-emerald-300 transition-all"
+                  :title="t('themeGreen')"
+                ></button>
+                <!-- Night Dark -->
+                <button 
+                  @click="setNovelTheme('night')" 
+                  :class="novelTheme === 'night' ? 'ring-2 ring-blue-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                  class="w-5 h-5 rounded-full bg-[#18181b] border border-zinc-700 transition-all"
+                  :title="t('themeNight')"
+                ></button>
+              </div>
             </div>
           </template>
 
@@ -949,56 +952,113 @@
         :class="{ 'hud-bottom-hidden': !showHud }" 
         class="hud-bar absolute bottom-0 left-0 right-0 z-40 bg-zinc-950/85 backdrop-blur-md border-t border-zinc-800/80 px-4 py-3 flex flex-col gap-2"
       >
-        <!-- For Novels: Chapter Slider & TOC -->
-        <div v-if="currentComic?.type === 'book'" class="flex items-center gap-3 max-w-2xl mx-auto w-full">
-          <button 
-            @click.stop="goToNovelChapter(novelChapterIndex - 1)" 
-            :disabled="novelChapterIndex <= 0"
-            class="p-2 text-zinc-300 disabled:opacity-30 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-            :title="t('prevPageTitle')"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-          </button>
+        <!-- For Novels: Settings & Chapter Slider -->
+        <div v-if="currentComic?.type === 'book'" class="max-w-2xl mx-auto w-full flex flex-col gap-2.5">
+          <!-- Row 1: Font Size & Theme Settings (Mobile Friendly Toolbar) -->
+          <div class="flex items-center justify-between px-1 border-b border-zinc-800/60 pb-2">
+            <!-- Font Size Controls -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-400 font-medium">字号</span>
+              <button 
+                @click="changeNovelFontSize(-2)" 
+                title="缩小字体"
+                class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-xs font-bold transition-all"
+              >
+                A-
+              </button>
+              <span class="text-xs font-mono font-bold text-zinc-200 min-w-[20px] text-center">{{ novelFontSize }}</span>
+              <button 
+                @click="changeNovelFontSize(2)" 
+                title="放大字体"
+                class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 rounded-lg text-xs font-bold transition-all"
+              >
+                A+
+              </button>
+            </div>
 
-          <span class="text-xs text-zinc-400 w-12 text-right font-mono select-none">
-            {{ novelChapterIndex + 1 }}
-          </span>
+            <!-- Theme Palette -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-zinc-400 font-medium">背景</span>
+              <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 p-1 rounded-xl">
+                <button 
+                  @click="setNovelTheme('day')" 
+                  :class="novelTheme === 'day' ? 'ring-2 ring-blue-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                  class="w-5 h-5 rounded-full bg-[#faf9f5] border border-zinc-300 transition-all"
+                  :title="t('themeDay')"
+                ></button>
+                <button 
+                  @click="setNovelTheme('sepia')" 
+                  :class="novelTheme === 'sepia' ? 'ring-2 ring-amber-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                  class="w-5 h-5 rounded-full bg-[#f6ebd4] border border-amber-300 transition-all"
+                  :title="t('themeSepia')"
+                ></button>
+                <button 
+                  @click="setNovelTheme('green')" 
+                  :class="novelTheme === 'green' ? 'ring-2 ring-emerald-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                  class="w-5 h-5 rounded-full bg-[#dceada] border border-emerald-300 transition-all"
+                  :title="t('themeGreen')"
+                ></button>
+                <button 
+                  @click="setNovelTheme('night')" 
+                  :class="novelTheme === 'night' ? 'ring-2 ring-blue-500 scale-110' : 'opacity-70 hover:opacity-100'"
+                  class="w-5 h-5 rounded-full bg-[#18181b] border border-zinc-700 transition-all"
+                  :title="t('themeNight')"
+                ></button>
+              </div>
+            </div>
+          </div>
 
-          <input 
-            type="range" 
-            min="0" 
-            :max="Math.max(0, (currentComic?.total_chapters || 1) - 1)" 
-            :value="novelChapterIndex"
-            @input="goToNovelChapter(parseInt($event.target.value))"
-            class="flex-1 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-          >
+          <!-- Row 2: Chapter Slider & TOC -->
+          <div class="flex items-center gap-3 w-full">
+            <button 
+              @click.stop="goToNovelChapter(novelChapterIndex - 1)" 
+              :disabled="novelChapterIndex <= 0"
+              class="p-2 text-zinc-300 disabled:opacity-30 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              :title="t('prevPageTitle')"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </button>
 
-          <span class="text-xs text-zinc-400 w-12 text-left font-mono select-none">{{ currentComic?.total_chapters }}</span>
+            <span class="text-xs text-zinc-400 w-12 text-right font-mono select-none">
+              {{ novelChapterIndex + 1 }}
+            </span>
 
-          <button 
-            @click.stop="goToNovelChapter(novelChapterIndex + 1)" 
-            :disabled="novelChapterIndex >= (currentComic?.total_chapters || 1) - 1"
-            class="p-2 text-zinc-300 disabled:opacity-30 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-            :title="t('nextPageTitle')"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </button>
+            <input 
+              type="range" 
+              min="0" 
+              :max="Math.max(0, (currentComic?.total_chapters || 1) - 1)" 
+              :value="novelChapterIndex"
+              @input="goToNovelChapter(parseInt($event.target.value))"
+              class="flex-1 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            >
 
-          <!-- TOC Drawer Toggle -->
-          <button 
-            @click="showThumbnailDrawer = !showThumbnailDrawer"
-            :class="showThumbnailDrawer ? 'text-blue-400 bg-blue-500/20' : 'text-zinc-400 hover:text-white'"
-            class="p-1.5 rounded-lg transition-colors ml-1"
-            :title="t('tocTitle')"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
-            </svg>
-          </button>
+            <span class="text-xs text-zinc-400 w-12 text-left font-mono select-none">{{ currentComic?.total_chapters }}</span>
+
+            <button 
+              @click.stop="goToNovelChapter(novelChapterIndex + 1)" 
+              :disabled="novelChapterIndex >= (currentComic?.total_chapters || 1) - 1"
+              class="p-2 text-zinc-300 disabled:opacity-30 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              :title="t('nextPageTitle')"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
+
+            <!-- TOC Drawer Toggle -->
+            <button 
+              @click="showThumbnailDrawer = !showThumbnailDrawer"
+              :class="showThumbnailDrawer ? 'text-blue-400 bg-blue-500/20' : 'text-zinc-400 hover:text-white'"
+              class="p-1.5 rounded-lg transition-colors ml-1"
+              :title="t('tocTitle')"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- For Comics: Page Slider & Jump -->
@@ -1409,8 +1469,8 @@
     <!-- 6. 网页左下角快捷导航 (BACK, PARENT & HOME) -->
     <!-- ========================================== -->
     <div 
+      v-if="viewMode === 'library'"
       class="fixed bottom-5 left-5 z-40 flex items-center gap-2 select-none transition-all duration-300"
-      :class="{ 'opacity-0 pointer-events-none translate-y-4': viewMode === 'reader' && !showHud }"
     >
       <!-- 1. 回到上一个访问的页面 -->
       <button 
@@ -1458,11 +1518,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.0.9"></script>
-  <script src="/static/js/touch.js?v=1.0.9"></script>
-  <script src="/static/js/modules/api.js?v=1.0.9"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.0.9"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.0.9"></script>
-  <script src="/static/js/app.js?v=1.0.9"></script>
+  <script src="/static/js/i18n.js?v=1.1.0"></script>
+  <script src="/static/js/touch.js?v=1.1.0"></script>
+  <script src="/static/js/modules/api.js?v=1.1.0"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.1.0"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.1.0"></script>
+  <script src="/static/js/app.js?v=1.1.0"></script>
 </body>
 </html>
