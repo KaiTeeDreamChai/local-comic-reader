@@ -1,4 +1,5 @@
 // Novel reading state, themes, font sizing, and bookmark management
+(function() {
 const { ref, computed, nextTick } = Vue;
 
 function useNovelReader(currentComic, currentPageIndex) {
@@ -111,6 +112,7 @@ function useNovelReader(currentComic, currentPageIndex) {
     goToNovelChapter,
     handleNovelScroll
   };
-}
+};
 
 window.useNovelReader = useNovelReader;
+})();

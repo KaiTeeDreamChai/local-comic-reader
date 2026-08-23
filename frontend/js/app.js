@@ -1,4 +1,5 @@
 // Main Vue 3 Application Controller
+(function() {
 const { createApp, ref, computed, onMounted, onUnmounted, watch, nextTick } = Vue;
 
 createApp({
@@ -484,3 +485,4 @@ createApp({
     };
   }
 }).mount('#app');
+})();

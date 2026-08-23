@@ -1,4 +1,5 @@
 // Comic reader controls, dual-page mode, preloading, and navigation
+(function() {
 const { ref, computed, nextTick } = Vue;
 
 function useComicReader(currentComic, currentPageIndex, weakNetworkMode, t) {
@@ -207,6 +208,7 @@ function useComicReader(currentComic, currentPageIndex, weakNetworkMode, t) {
     onLeftZoneClick,
     onRightZoneClick
   };
-}
+};
 
 window.useComicReader = useComicReader;
+})();
