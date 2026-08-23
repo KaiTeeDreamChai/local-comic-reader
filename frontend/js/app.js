@@ -244,6 +244,30 @@ createApp({
       currentComic.value = null;
     };
 
+    // Quick Bottom-Left Navigation
+    const goHome = () => {
+      if (viewMode.value === 'reader') {
+        closeReader();
+      }
+      searchQuery.value = '';
+      loadLibrary('');
+    };
+
+    const goBack = () => {
+      if (viewMode.value === 'reader') {
+        closeReader();
+        return;
+      }
+      if (!isRoot.value) {
+        if (breadcrumbs.value && breadcrumbs.value.length > 1) {
+          const prevCrumb = breadcrumbs.value[breadcrumbs.value.length - 2];
+          loadLibrary(prevCrumb.encoded_path);
+        } else {
+          loadLibrary('');
+        }
+      }
+    };
+
     // Reader Navigation & Preloading
     const goToPage = (index) => {
       if (!currentComic.value) return;
@@ -502,6 +526,8 @@ createApp({
       handleDeleteBookshelf,
       openComic,
       closeReader,
+      goHome,
+      goBack,
       goToPage,
       prevPage,
       nextPage,
