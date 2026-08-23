@@ -944,6 +944,7 @@
         <!-- 4. Webtoon Waterfall Continuous Scroll Mode -->
         <div 
           v-else 
+          id="webtoon-scroll-viewport"
           @scroll="handleWebtoonScroll"
           class="webtoon-scroll-container py-12 relative"
         >
@@ -958,10 +959,13 @@
             v-for="(page, idx) in currentComic?.pages" 
             :key="idx" 
             :id="`webtoon-page-${idx}`"
+            :data-page-index="idx"
             class="webtoon-item"
           >
+            <!-- Initial viewport pages get direct src, distant pages get on-demand loaded via IntersectionObserver -->
             <img 
-              :src="getPageUrl(idx)" 
+              :src="(idx >= Math.max(0, currentPageIndex - 2) && idx <= currentPageIndex + 3) ? getPageUrl(idx) : ''" 
+              :data-src="getPageUrl(idx)"
               loading="lazy" 
               :alt="`Page ${idx + 1}`"
               class="webtoon-img"
@@ -1544,11 +1548,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.1.2"></script>
-  <script src="/static/js/touch.js?v=1.1.2"></script>
-  <script src="/static/js/modules/api.js?v=1.1.2"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.1.2"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.1.2"></script>
-  <script src="/static/js/app.js?v=1.1.2"></script>
+  <script src="/static/js/i18n.js?v=1.1.3"></script>
+  <script src="/static/js/touch.js?v=1.1.3"></script>
+  <script src="/static/js/modules/api.js?v=1.1.3"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.1.3"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.1.3"></script>
+  <script src="/static/js/app.js?v=1.1.3"></script>
 </body>
 </html>

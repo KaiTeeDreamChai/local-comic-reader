@@ -300,6 +300,14 @@ createApp({
         touchController.destroy();
         touchController = null;
       }
+      comicReader.cleanupWebtoonObserver();
+      comicReader.loadedPages.value.clear();
+
+      // Immediately cancel all pending image downloads in the browser connection pool
+      try {
+        window.stop();
+      } catch (e) {}
+
       viewMode.value = 'library';
       currentComic.value = null;
     };

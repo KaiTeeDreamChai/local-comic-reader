@@ -97,13 +97,56 @@ function useComicReader(currentComic, currentPageIndex, weakNetworkMode, t) {
         img.src = pageUrl;
         img.onload = () => loadedPages.value.add(pageUrl);
       }
+  let webtoonObserver = null;
+
+  const initWebtoonObserver = () => {
+    if (webtoonObserver) {
+      webtoonObserver.disconnect();
+      webtoonObserver = null;
+    }
+    nextTick(() => {
+      const containerEl = document.getElementById('webtoon-scroll-viewport');
+      if (!containerEl) return;
+
+      webtoonObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target.querySelector('img[data-src]');
+            if (img && img.dataset.src) {
+              img.src = img.dataset.src;
+              img.removeAttribute('data-src');
+            }
+          }
+        });
+      }, {
+        root: containerEl,
+        rootMargin: '1200px 0px', // Preload images 1200px before scrolling into view
+        threshold: 0.01
+      });
+
+      const items = containerEl.querySelectorAll('.webtoon-item');
+      items.forEach(item => webtoonObserver.observe(item));
     });
+  };
+
+  const cleanupWebtoonObserver = () => {
+    if (webtoonObserver) {
+      webtoonObserver.disconnect();
+      webtoonObserver = null;
+    }
   };
 
   const scrollToCurrentWebtoonPage = () => {
     nextTick(() => {
+      initWebtoonObserver();
       const el = document.getElementById(`webtoon-page-${currentPageIndex.value}`);
       if (el) {
+        // Pre-fill target image
+        const img = el.querySelector('img');
+        if (img && img.dataset.src) {
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+        }
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
@@ -221,7 +264,9 @@ function useComicReader(currentComic, currentPageIndex, weakNetworkMode, t) {
     toggleReadingDirection,
     onLeftZoneClick,
     onRightZoneClick,
-    onWebtoonImageLoad
+    onWebtoonImageLoad,
+    initWebtoonObserver,
+    cleanupWebtoonObserver
   };
 };
 
