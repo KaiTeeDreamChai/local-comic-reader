@@ -52,6 +52,8 @@ createApp({
       currentLang.value = lang;
       localStorage.setItem('comic_lang', lang);
       document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    };
+
     // 7. Compose Submodules
     const novelReader = window.useNovelReader(currentComic, currentPageIndex);
     const comicReader = window.useComicReader(currentComic, currentPageIndex, weakNetworkMode, t);
