@@ -1,0 +1,80 @@
+// API client methods for local comic and ebook reader
+const API = {
+  async getSystemInfo() {
+    const res = await fetch('/api/info');
+    if (!res.ok) throw new Error('Failed to fetch system info');
+    return await res.json();
+  },
+
+  async getConfig() {
+    const res = await fetch('/api/config');
+    if (!res.ok) throw new Error('Failed to fetch config');
+    return await res.json();
+  },
+
+  async updateSettings(settings) {
+    const res = await fetch('/api/config/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings })
+    });
+    if (!res.ok) throw new Error('Failed to save settings');
+    return await res.json();
+  },
+
+  async addBookshelf(path, name = '') {
+    const res = await fetch('/api/config/bookshelves', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to add bookshelf');
+    return data;
+  },
+
+  async removeBookshelf(shelfId) {
+    const res = await fetch(`/api/config/bookshelves/${shelfId}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error('Failed to remove bookshelf');
+    return await res.json();
+  },
+
+  async getDrives() {
+    const res = await fetch('/api/filesystem/drives');
+    if (!res.ok) throw new Error('Failed to fetch drives');
+    return await res.json();
+  },
+
+  async browseLibrary(encodedPath = '') {
+    const url = encodedPath
+      ? `/api/library/browse?encoded_path=${encodedPath}`
+      : '/api/library/browse';
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to browse directory');
+    return data;
+  },
+
+  async getComicDetails(comicId) {
+    const res = await fetch(`/api/comic/details?comic_id=${comicId}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to load details');
+    return data;
+  },
+
+  getPageUrl(comicId, pageIndex, optimize = false) {
+    return `/api/comic/page?comic_id=${comicId}&page_index=${pageIndex}${optimize ? '&optimize=true' : ''}`;
+  },
+
+  getThumbnailUrl(comicId, pageIndex = 0, size = 360) {
+    return `/api/comic/thumbnail?comic_id=${comicId}&page_index=${pageIndex}&size=${size}`;
+  },
+
+  getDownloadUrl(comicId) {
+    return `/api/comic/download?comic_id=${comicId}`;
+  }
+};
+
+window.API = API;

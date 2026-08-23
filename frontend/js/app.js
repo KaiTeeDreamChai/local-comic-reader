@@ -1,22 +1,24 @@
+// Main Vue 3 Application Controller
 const { createApp, ref, computed, onMounted, onUnmounted, watch, nextTick } = Vue;
 
 createApp({
   setup() {
-    // Navigation State
+    // 1. Navigation & View State
     const viewMode = ref('library'); // 'library' | 'reader'
     const currentPath = ref('');
     const breadcrumbs = ref([]);
     const searchQuery = ref('');
     const loading = ref(false);
     const errorMsg = ref('');
+    const navHistory = ref([]); // History stack for back navigation
 
-    // Library Data
+    // 2. Library Data
     const isRoot = ref(true);
     const bookshelves = ref([]);
     const currentDirectory = ref({ name: '', current_path: '', folders: [], comics: [] });
     const systemDrives = ref([]);
 
-    // Modals State
+    // 3. Modals State
     const showBookshelfModal = ref(false);
     const showInfoModal = ref(false);
     const showSettingsModal = ref(false);
@@ -24,201 +26,49 @@ createApp({
     const newShelfName = ref('');
     const addingShelf = ref(false);
 
-    // System / LAN Info
+    // 4. System & Network State
     const systemInfo = ref({ lan_urls: [], local_ips: [], port: 8000, platform: '' });
-
-    // Reader State
-    const currentComic = ref(null);
-    const currentPageIndex = ref(0);
-    const readingMode = ref('paged'); // 'paged' | 'scroll'
-    const readingDirection = ref('ltr'); // 'ltr' (left to right) | 'rtl' (right to left)
-    const pageSpread = ref(localStorage.getItem('comic_page_spread') || 'single'); // 'single' | 'double'
-    const isWideOrLandscape = ref(false);
-    const showHud = ref(true);
-    const showThumbnailDrawer = ref(false);
-    const isFullscreen = ref(false);
-    const currentZoom = ref(1);
-    const loadedPages = ref(new Set());
+    const downloadingComics = ref(new Set());
     const weakNetworkMode = ref(localStorage.getItem('comic_weak_net_mode') === 'true');
 
-    // Novel / Ebook Specific Settings
-    const novelFontSize = ref(parseInt(localStorage.getItem('novel_font_size') || '18', 10));
-    const novelTheme = ref(localStorage.getItem('novel_theme') || 'night'); // 'day' | 'sepia' | 'green' | 'night'
-    const novelChapterIndex = ref(0);
-    const bookBookmarks = ref([]); // List of { id, comicId, chapterIndex, chapterTitle, snippet, timestamp }
-    const showBookmarkDrawer = ref(false);
+    // 5. Common Reader State
+    const currentComic = ref(null);
+    const currentPageIndex = ref(0);
 
-    const changeNovelFontSize = (delta) => {
-      const newSize = Math.min(36, Math.max(12, novelFontSize.value + delta));
-      novelFontSize.value = newSize;
-      localStorage.setItem('novel_font_size', newSize.toString());
-    };
-
-    const setNovelTheme = (theme) => {
-      novelTheme.value = theme;
-      localStorage.setItem('novel_theme', theme);
-    };
-
-    const loadBookmarks = (comicId) => {
-      try {
-        const raw = localStorage.getItem(`novel_bookmarks_${comicId}`);
-        bookBookmarks.value = raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        bookBookmarks.value = [];
-      }
-    };
-
-    const saveBookmarks = (comicId) => {
-      try {
-        localStorage.setItem(`novel_bookmarks_${comicId}`, JSON.stringify(bookBookmarks.value));
-      } catch (e) {
-        console.error('Failed to save bookmarks:', e);
-      }
-    };
-
-    const isCurrentChapterBookmarked = computed(() => {
-      if (!currentComic.value) return false;
-      return bookBookmarks.value.some(b => b.chapterIndex === novelChapterIndex.value);
-    });
-
-    const toggleBookmark = () => {
-      if (!currentComic.value || !currentComic.value.chapters) return;
-      const chIdx = novelChapterIndex.value;
-      const chapter = currentComic.value.chapters[chIdx];
-      const existingIdx = bookBookmarks.value.findIndex(b => b.chapterIndex === chIdx);
-
-      if (existingIdx >= 0) {
-        bookBookmarks.value.splice(existingIdx, 1);
-      } else {
-        const firstPara = (chapter.paragraphs && chapter.paragraphs[0]) ? chapter.paragraphs[0].slice(0, 80) : '';
-        bookBookmarks.value.push({
-          id: Date.now().toString(),
-          chapterIndex: chIdx,
-          chapterTitle: chapter.title || `第 ${chIdx + 1} 章`,
-          snippet: firstPara ? `${firstPara}...` : '',
-          timestamp: new Date().toLocaleString()
-        });
-      }
-      saveBookmarks(currentComic.value.id);
-    };
-
-    const removeBookmark = (bookmarkId) => {
-      bookBookmarks.value = bookBookmarks.value.filter(b => b.id !== bookmarkId);
-      if (currentComic.value) {
-        saveBookmarks(currentComic.value.id);
-      }
-    };
-
-    const goToNovelChapter = (idx, targetScrollTop = 0) => {
-      if (!currentComic.value || !currentComic.value.chapters) return;
-      if (idx < 0 || idx >= currentComic.value.chapters.length) return;
-      novelChapterIndex.value = idx;
-      currentPageIndex.value = idx;
-      if (currentComic.value.id) {
-        localStorage.setItem(`comic_progress_${currentComic.value.id}`, idx);
-        localStorage.setItem(`novel_scroll_${currentComic.value.id}_ch${idx}`, targetScrollTop ? targetScrollTop.toString() : '0');
-      }
-      nextTick(() => {
-        const viewport = document.querySelector('.novel-reader-viewport');
-        if (viewport) {
-          viewport.scrollTop = targetScrollTop || 0;
-        }
-      });
-    };
-
-    const handleNovelScroll = (e) => {
-      if (!currentComic.value || currentComic.value.type !== 'book') return;
-      const scrollTop = e.target.scrollTop;
-      const comicId = currentComic.value.id;
-      const chIdx = novelChapterIndex.value;
-      localStorage.setItem(`novel_scroll_${comicId}_ch${chIdx}`, scrollTop.toString());
-      localStorage.setItem(`comic_progress_${comicId}`, chIdx.toString());
-    };
-
-    let touchController = null;
-    let hudTimer = null;
-
-    // Detect Desktop or Mobile Landscape
-    const updateScreenOrientation = () => {
-      const isLandscape = window.innerWidth > window.innerHeight;
-      const isDesktop = window.innerWidth >= 768;
-      isWideOrLandscape.value = isLandscape || isDesktop;
-    };
-
-    const isDoublePage = computed(() => {
-      return readingMode.value === 'paged' && isWideOrLandscape.value && pageSpread.value === 'double';
-    });
-
-    const currentPairIndex = computed(() => {
-      if (!isDoublePage.value || !currentComic.value) return null;
-      const p2 = currentPageIndex.value + 1;
-      return p2 < currentComic.value.total_pages ? p2 : null;
-    });
-
-    const togglePageSpread = () => {
-      pageSpread.value = pageSpread.value === 'single' ? 'double' : 'single';
-      saveSettings();
-      if (touchController) {
-        touchController.resetZoom();
-      }
-      preloadPages();
-    };
-
-    // Language / i18n State
-    const currentLang = ref(localStorage.getItem('comic_reader_lang') || 'zh');
-
+    // 6. Internationalization (i18n)
+    const currentLang = ref(localStorage.getItem('comic_lang') || 'zh');
     const t = (key, params = {}) => {
-      const dict = (typeof i18n !== 'undefined' && i18n[currentLang.value]) ? i18n[currentLang.value] : (typeof i18n !== 'undefined' ? i18n.zh : {});
-      let text = dict[key] || key;
-      if (params && typeof params === 'object') {
-        Object.keys(params).forEach(p => {
-          text = text.replace(new RegExp(`\\{${p}\\}`, 'g'), params[p]);
-        });
-      }
+      const dict = window.i18nTranslations && window.i18nTranslations[currentLang.value]
+        ? window.i18nTranslations[currentLang.value]
+        : window.i18nTranslations['zh'];
+      let text = (dict && dict[key]) || key;
+      Object.keys(params).forEach(p => {
+        text = text.replace(new RegExp(`\\{${p}\\}`, 'g'), params[p]);
+      });
       return text;
     };
 
     const setLanguage = (lang) => {
       currentLang.value = lang;
-      localStorage.setItem('comic_reader_lang', lang);
+      localStorage.setItem('comic_lang', lang);
+      document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
     };
 
-    // Toggle Weak Network Optimization Mode
+    // 7. Compose Submodules
+    const novelReader = window.useNovelReader(currentComic, currentPageIndex);
+    const comicReader = window.useComicReader(currentComic, currentPageIndex, weakNetworkMode, t);
+
+    let touchController = null;
+
     const toggleWeakNetworkMode = () => {
       weakNetworkMode.value = !weakNetworkMode.value;
-      localStorage.setItem('comic_weak_net_mode', weakNetworkMode.value ? 'true' : 'false');
-      loadedPages.value.clear();
-      if (currentComic.value) {
-        preloadPages();
+      localStorage.setItem('comic_weak_net_mode', weakNetworkMode.value.toString());
+      if (viewMode.value === 'reader' && currentComic.value && currentComic.value.type !== 'book') {
+        comicReader.preloadPages();
       }
     };
 
-    const getPageUrl = (pageIndex) => {
-      if (!currentComic.value || !currentComic.value.pages || !currentComic.value.pages[pageIndex]) return '';
-      const base = currentComic.value.pages[pageIndex].url;
-      return weakNetworkMode.value ? `${base}&optimize=1` : base;
-    };
-
-    // Load App Settings from LocalStorage or Server
-    const loadSettings = () => {
-      const savedLang = localStorage.getItem('comic_reader_lang');
-      if (savedLang) currentLang.value = savedLang;
-      const savedMode = localStorage.getItem('comic_reading_mode');
-      if (savedMode) readingMode.value = savedMode;
-      const savedDir = localStorage.getItem('comic_reading_dir');
-      if (savedDir) readingDirection.value = savedDir;
-      const savedSpread = localStorage.getItem('comic_page_spread');
-      if (savedSpread) pageSpread.value = savedSpread;
-    };
-
-    const saveSettings = () => {
-      localStorage.setItem('comic_reader_lang', currentLang.value);
-      localStorage.setItem('comic_reading_mode', readingMode.value);
-      localStorage.setItem('comic_reading_dir', readingDirection.value);
-      localStorage.setItem('comic_page_spread', pageSpread.value);
-    };
-
-    // Filtered Comics & Folders
+    // Filtered lists for search in library
     const filteredFolders = computed(() => {
       if (!searchQuery.value.trim()) return currentDirectory.value.folders || [];
       const q = searchQuery.value.toLowerCase();
@@ -231,124 +81,51 @@ createApp({
       return (currentDirectory.value.comics || []).filter(c => c.name.toLowerCase().includes(q));
     });
 
-    // Fetch System Info
-    const fetchSystemInfo = async () => {
-      try {
-        const res = await fetch('/api/info');
-        if (res.ok) {
-          systemInfo.value = await res.json();
-        }
-      } catch (e) {
-        console.error('Failed to get system info:', e);
-      }
-    };
-
-    // Fetch System Drives / Roots
-    const fetchSystemDrives = async () => {
-      try {
-        const res = await fetch('/api/filesystem/drives');
-        if (res.ok) {
-          systemDrives.value = await res.json();
-        }
-      } catch (e) {
-        console.error('Failed to load system drives:', e);
-      }
-    };
-
-    // Navigation History Stack
-    const navHistory = ref([]);
-    const currentEncodedPath = ref('');
-
-    // Load Library (Root or Subpath)
-    const loadLibrary = async (encodedPath = '', isFromHistory = false) => {
+    // 8. Library Browsing & Actions
+    const loadLibrary = async (encodedPath = '') => {
       loading.value = true;
       errorMsg.value = '';
       try {
-        if (!isFromHistory && currentEncodedPath.value !== encodedPath) {
-          navHistory.value.push(currentEncodedPath.value);
-          if (navHistory.value.length > 50) navHistory.value.shift();
-        }
-
-        const url = encodedPath ? `/api/library/browse?encoded_path=${encodedPath}` : '/api/library/browse';
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.detail || '该目录不可用或路径无效');
-        }
-
-        currentEncodedPath.value = encodedPath;
-        isRoot.value = !!data.is_root;
+        const data = await window.API.browseLibrary(encodedPath);
         if (data.is_root) {
+          isRoot.value = true;
           bookshelves.value = data.bookshelves || [];
-          currentDirectory.value = { name: '书架首页', current_path: '', folders: [], comics: [] };
-          currentPath.value = '';
           breadcrumbs.value = [{ name: '首页', encoded_path: '' }];
+          currentPath.value = '';
         } else {
+          isRoot.value = false;
           currentDirectory.value = data;
-          currentPath.value = data.current_path;
-          updateBreadcrumbs(data);
+          breadcrumbs.value = data.breadcrumbs || [];
+          currentPath.value = data.current_path || '';
         }
       } catch (e) {
-        errorMsg.value = e.message || '该目录不可用或已被移动/删除';
+        errorMsg.value = e.message || '加载目录出错';
       } finally {
         loading.value = false;
       }
     };
 
-    const updateBreadcrumbs = (data) => {
-      const sep = data.current_path.includes('\\') ? '\\' : '/';
-      const parts = data.current_path.split(sep).filter(Boolean);
-      
-      const crumbs = [{ name: '首页', encoded_path: '' }];
-      let accumulated = '';
-      
-      parts.forEach((p, idx) => {
-        if (sep === '/' && idx === 0 && !data.current_path.startsWith('/')) {
-          accumulated = p;
-        } else if (sep === '\\' && idx === 0) {
-          accumulated = p + '\\';
-        } else {
-          accumulated = accumulated ? `${accumulated}${sep}${p}` : (sep === '/' ? `/${p}` : p);
-        }
-        crumbs.push({
-          name: p,
-          path: accumulated,
-          encoded_path: btoa(unescape(encodeURIComponent(accumulated))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-        });
-      });
-
-      breadcrumbs.value = crumbs;
+    const pushNavHistory = (encodedPath) => {
+      navHistory.value.push(encodedPath || '');
     };
 
     const navigateToCrumb = (crumb) => {
+      pushNavHistory(currentPath.value ? btoa(unescape(encodeURIComponent(currentPath.value))) : '');
       loadLibrary(crumb.encoded_path);
     };
 
     const openFolder = (folder) => {
-      loadLibrary(folder.id);
+      pushNavHistory(currentPath.value ? btoa(unescape(encodeURIComponent(currentPath.value))) : '');
+      loadLibrary(folder.encoded_path);
     };
 
-    // Bookshelf Management
     const handleAddBookshelf = async () => {
       if (!newShelfPath.value.trim()) return;
       addingShelf.value = true;
-      errorMsg.value = '';
       try {
-        const res = await fetch('/api/config/bookshelves', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            path: newShelfPath.value.trim(),
-            name: newShelfName.value.trim()
-          })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || '添加失败');
-        
+        await window.API.addBookshelf(newShelfPath.value.trim(), newShelfName.value.trim());
         newShelfPath.value = '';
         newShelfName.value = '';
-        showBookshelfModal.value = false;
         await loadLibrary();
       } catch (e) {
         alert(e.message);
@@ -358,49 +135,42 @@ createApp({
     };
 
     const handleDeleteBookshelf = async (shelfId) => {
-      if (!confirm('确定要从书架中移除此文件夹吗？（不会删除电脑上的实际文件）')) return;
+      if (!confirm(t('confirmRemoveShelf'))) return;
       try {
-        const res = await fetch(`/api/config/bookshelves/${shelfId}`, { method: 'DELETE' });
-        if (res.ok) {
-          await loadLibrary();
-        }
+        await window.API.removeBookshelf(shelfId);
+        await loadLibrary();
       } catch (e) {
-        alert('删除失败');
+        alert(e.message || '删除失败');
       }
     };
 
-    // Open Comic Reader
+    // 9. Open & Close Reader
     const openComic = async (comic) => {
       loading.value = true;
       try {
-        const res = await fetch(`/api/comic/details?comic_id=${comic.id}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || '无法加载画册详情');
-
+        const data = await window.API.getComicDetails(comic.id);
         currentComic.value = data;
-        
+
         // Restore progress if available
         const savedPage = localStorage.getItem(`comic_progress_${comic.id}`);
         const initPage = savedPage ? parseInt(savedPage, 10) : 0;
         currentPageIndex.value = Math.min(Math.max(0, initPage), Math.max(0, (data.total_pages || 1) - 1));
-        novelChapterIndex.value = currentPageIndex.value;
+        novelReader.novelChapterIndex.value = currentPageIndex.value;
 
         // Load bookmarks if this is an ebook/novel
         if (data.type === 'book') {
-          loadBookmarks(data.id);
+          novelReader.loadBookmarks(data.id);
         }
 
         viewMode.value = 'reader';
-        showHud.value = true;
-        showThumbnailDrawer.value = false;
-        showBookmarkDrawer.value = false;
-        loadedPages.value.clear();
-
-        resetHudTimer();
+        comicReader.showHud.value = true;
+        comicReader.showThumbnailDrawer.value = false;
+        novelReader.showBookmarkDrawer.value = false;
+        comicReader.loadedPages.value.clear();
 
         await nextTick();
         if (data.type === 'book') {
-          const savedScroll = localStorage.getItem(`novel_scroll_${data.id}_ch${novelChapterIndex.value}`);
+          const savedScroll = localStorage.getItem(`novel_scroll_${data.id}_ch${novelReader.novelChapterIndex.value}`);
           const scrollPos = savedScroll ? parseInt(savedScroll, 10) : 0;
           const viewport = document.querySelector('.novel-reader-viewport');
           if (viewport) {
@@ -408,10 +178,10 @@ createApp({
           }
         } else {
           initTouch();
-          preloadPages();
+          comicReader.preloadPages();
 
-          if (readingMode.value === 'scroll') {
-            scrollToCurrentWebtoonPage();
+          if (comicReader.readingMode.value === 'scroll') {
+            comicReader.scrollToCurrentWebtoonPage();
           }
         }
       } catch (e) {
@@ -430,7 +200,7 @@ createApp({
       currentComic.value = null;
     };
 
-    // Quick Navigation Toolbar (Back to last page, Parent folder, Bookshelf Root)
+    // 10. Navigation Bar Actions
     const goHome = () => {
       if (viewMode.value === 'reader') {
         closeReader();
@@ -445,219 +215,46 @@ createApp({
         return;
       }
       if (navHistory.value.length > 0) {
-        const prev = navHistory.value.pop();
-        loadLibrary(prev, true);
+        const last = navHistory.value.pop();
+        loadLibrary(last);
       } else if (!isRoot.value) {
-        loadLibrary('');
+        goParent();
       }
     };
 
     const goParent = () => {
-      if (viewMode.value === 'reader') {
-        closeReader();
-        return;
-      }
-      if (!isRoot.value) {
-        if (currentDirectory.value) {
-          // If server returned an encoded parent path (which is "" if at bookshelf root)
-          if (currentDirectory.value.encoded_parent_path !== undefined && currentDirectory.value.encoded_parent_path !== null) {
-            loadLibrary(currentDirectory.value.encoded_parent_path);
-            return;
-          }
-          if (currentDirectory.value.is_bookshelf_root) {
-            loadLibrary('');
-            return;
-          }
-        }
-        if (breadcrumbs.value && breadcrumbs.value.length > 1) {
-          const parentCrumb = breadcrumbs.value[breadcrumbs.value.length - 2];
-          loadLibrary(parentCrumb.encoded_path);
-        } else {
-          loadLibrary('');
-        }
-      }
-    };
-
-    // Paged Reading Click Zones
-    const onLeftZoneClick = () => {
-      if (readingDirection.value === 'rtl') {
-        nextPageInternal();
+      if (isRoot.value) return;
+      if (breadcrumbs.value.length >= 2) {
+        const parentCrumb = breadcrumbs.value[breadcrumbs.value.length - 2];
+        loadLibrary(parentCrumb.encoded_path);
       } else {
-        prevPageInternal();
+        loadLibrary('');
       }
     };
 
-    const onRightZoneClick = () => {
-      if (readingDirection.value === 'rtl') {
-        prevPageInternal();
-      } else {
-        nextPageInternal();
-      }
-    };
-
-    // Comic Download
-    const downloadingComics = ref(new Set());
-
-    const downloadComic = (comic) => {
-      if (downloadingComics.value.has(comic.id)) return;
+    // 11. Comic & Media Download
+    const downloadComic = async (comic) => {
+      if (!comic || !comic.id) return;
       downloadingComics.value.add(comic.id);
-
-      const downloadUrl = `/api/comic/download?comic_id=${comic.id}`;
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = `${comic.name || comic.title || 'comic'}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
-      setTimeout(() => {
-        downloadingComics.value.delete(comic.id);
-      }, 3000);
-    };
-
-    // Reader Navigation & Preloading
-    const goToPage = (index) => {
-      if (!currentComic.value) return;
-      if (index < 0 || index >= currentComic.value.total_pages) return;
-
-      currentPageIndex.value = index;
-      localStorage.setItem(`comic_progress_${currentComic.value.id}`, index);
-
-      if (touchController) {
-        touchController.resetZoom();
-      }
-
-      if (readingMode.value === 'scroll') {
-        scrollToCurrentWebtoonPage();
-      }
-
-      preloadPages();
-    };
-
-    const prevPage = () => {
-      if (readingDirection.value === 'rtl') {
-        nextPageInternal();
-      } else {
-        prevPageInternal();
+      try {
+        const downloadUrl = window.API.getDownloadUrl(comic.id);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        const ext = (comic.type === 'book' && comic.ext) ? comic.ext : '.zip';
+        a.download = `${comic.name || comic.title || 'comic'}${ext.startsWith('.') ? ext : '.' + ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (err) {
+        alert('下载出错: ' + err.message);
+      } finally {
+        setTimeout(() => {
+          downloadingComics.value.delete(comic.id);
+        }, 2000);
       }
     };
 
-    const nextPage = () => {
-      if (readingDirection.value === 'rtl') {
-        prevPageInternal();
-      } else {
-        nextPageInternal();
-      }
-    };
-
-    const prevPageInternal = () => {
-      if (currentPageIndex.value > 0) {
-        const step = isDoublePage.value ? 2 : 1;
-        goToPage(Math.max(0, currentPageIndex.value - step));
-      }
-    };
-
-    const nextPageInternal = () => {
-      if (currentComic.value && currentPageIndex.value < currentComic.value.total_pages - 1) {
-        const step = isDoublePage.value ? 2 : 1;
-        goToPage(Math.min(currentComic.value.total_pages - 1, currentPageIndex.value + step));
-      }
-    };
-
-    const preloadPages = () => {
-      if (!currentComic.value || readingMode.value === 'scroll') return;
-      const cur = currentPageIndex.value;
-      const total = currentComic.value.total_pages;
-
-      // In dual page mode, preload next 6 and prev 2 pages
-      const targets = weakNetworkMode.value
-        ? [cur, cur + 1, cur + 2, cur + 3, cur + 4, cur + 5, cur - 1, cur - 2].filter(idx => idx >= 0 && idx < total)
-        : [cur, cur + 1, cur + 2, cur + 3, cur - 1].filter(idx => idx >= 0 && idx < total);
-
-      targets.forEach(idx => {
-        const pageUrl = getPageUrl(idx);
-        if (!loadedPages.value.has(pageUrl)) {
-          const img = new Image();
-          img.src = pageUrl;
-          img.onload = () => loadedPages.value.add(pageUrl);
-        }
-      });
-    };
-
-    const scrollToCurrentWebtoonPage = () => {
-      nextTick(() => {
-        const el = document.getElementById(`webtoon-page-${currentPageIndex.value}`);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      });
-    };
-
-    const handleWebtoonScroll = (e) => {
-      const container = e.target;
-      const items = container.querySelectorAll('.webtoon-item');
-      const scrollTop = container.scrollTop;
-      const viewportHeight = container.clientHeight;
-
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const offsetTop = item.offsetTop;
-        const height = item.offsetHeight;
-        if (offsetTop + height / 2 >= scrollTop) {
-          if (currentPageIndex.value !== i) {
-            currentPageIndex.value = i;
-            if (currentComic.value) {
-              localStorage.setItem(`comic_progress_${currentComic.value.id}`, i);
-            }
-          }
-          break;
-        }
-      }
-    };
-
-    // HUD & Fullscreen Controls
-    const toggleHud = () => {
-      showHud.value = !showHud.value;
-      if (!showHud.value) {
-        showThumbnailDrawer.value = false;
-        showBookmarkDrawer.value = false;
-      }
-    };
-
-    const resetHudTimer = () => {
-      // Intentionally empty: do not automatically hide HUD or force fullscreen
-      if (hudTimer) {
-        clearTimeout(hudTimer);
-        hudTimer = null;
-      }
-    };
-
-    const toggleFullscreen = () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().then(() => {
-          isFullscreen.value = true;
-        }).catch(err => console.error(err));
-      } else {
-        document.exitFullscreen().then(() => {
-          isFullscreen.value = false;
-        });
-      }
-    };
-
-    const toggleReadingMode = () => {
-      readingMode.value = readingMode.value === 'paged' ? 'scroll' : 'paged';
-      saveSettings();
-      if (readingMode.value === 'scroll') {
-        scrollToCurrentWebtoonPage();
-      }
-    };
-
-    const toggleReadingDirection = () => {
-      readingDirection.value = readingDirection.value === 'ltr' ? 'rtl' : 'ltr';
-      saveSettings();
-    };
-
-    // Touch Integration
+    // 12. Touch Controller Integration
     const initTouch = () => {
       const viewportEl = document.querySelector('.reader-viewport');
       if (!viewportEl) return;
@@ -668,60 +265,53 @@ createApp({
 
       touchController = new TouchController(viewportEl, {
         onSwipeLeft: () => {
-          if (readingDirection.value === 'rtl') prevPageInternal();
-          else nextPageInternal();
+          if (comicReader.readingDirection.value === 'rtl') comicReader.prevPageInternal();
+          else comicReader.nextPageInternal();
         },
         onSwipeRight: () => {
-          if (readingDirection.value === 'rtl') nextPageInternal();
-          else prevPageInternal();
+          if (comicReader.readingDirection.value === 'rtl') comicReader.nextPageInternal();
+          else comicReader.prevPageInternal();
         },
         onTap: ({ x, y }) => {
           const width = window.innerWidth;
           const height = window.innerHeight;
 
-          // 1. Single tap on the TOP 22% area -> ALWAYS show top HUD with Exit button
           if (y < height * 0.22) {
-            showHud.value = true;
-            resetHudTimer();
+            comicReader.showHud.value = true;
             return;
           }
 
-          // 2. Single tap on the BOTTOM 15% area -> ALWAYS show HUD with page slider
           if (y > height * 0.85) {
-            showHud.value = true;
-            resetHudTimer();
+            comicReader.showHud.value = true;
             return;
           }
 
-          // 3. Dual Page vs Single Page Tap Zones
-          if (isDoublePage.value) {
-            // Dual Page: Left Half (0-46%) vs Right Half (54-100%) vs Middle Seam
+          if (comicReader.isDoublePage.value) {
             if (x < width * 0.46) {
-              onLeftZoneClick();
+              comicReader.onLeftZoneClick();
             } else if (x > width * 0.54) {
-              onRightZoneClick();
+              comicReader.onRightZoneClick();
             } else {
-              toggleHud();
+              comicReader.toggleHud();
             }
           } else {
-            // Single Page: Left 20% vs Right 20% vs Center 60%
             if (x < width * 0.20) {
-              onLeftZoneClick();
+              comicReader.onLeftZoneClick();
             } else if (x > width * 0.80) {
-              onRightZoneClick();
+              comicReader.onRightZoneClick();
             } else {
-              toggleHud();
+              comicReader.toggleHud();
             }
           }
         },
         onDoubleTap: () => {},
         onZoomChange: (scale) => {
-          currentZoom.value = scale;
+          comicReader.currentZoom.value = scale;
         }
       });
     };
 
-    // Keyboard Shortcuts
+    // 13. Keyboard Shortcuts
     const handleKeyDown = (e) => {
       if (viewMode.value !== 'reader') return;
 
@@ -729,29 +319,40 @@ createApp({
         case 'ArrowRight':
         case 'PageDown':
         case ' ':
-          nextPage();
+          if (currentComic.value?.type === 'book') {
+            novelReader.goToNovelChapter(novelReader.novelChapterIndex.value + 1);
+          } else {
+            comicReader.nextPage();
+          }
           break;
         case 'ArrowLeft':
         case 'PageUp':
-          prevPage();
+          if (currentComic.value?.type === 'book') {
+            novelReader.goToNovelChapter(novelReader.novelChapterIndex.value - 1);
+          } else {
+            comicReader.prevPage();
+          }
           break;
         case 'f':
         case 'F':
-          toggleFullscreen();
-          break;
-        case 'm':
-        case 'M':
-          toggleReadingMode();
+          comicReader.toggleFullscreen();
           break;
         case 'd':
         case 'D':
-          if (isWideOrLandscape.value && readingMode.value === 'paged') {
-            togglePageSpread();
+          if (comicReader.isWideOrLandscape.value && comicReader.readingMode.value === 'paged') {
+            comicReader.togglePageSpread();
+          }
+          break;
+        case 'm':
+        case 'M':
+          if (currentComic.value?.type !== 'book') {
+            comicReader.toggleReadingMode();
           }
           break;
         case 'Escape':
-          if (showThumbnailDrawer.value) {
-            showThumbnailDrawer.value = false;
+          if (comicReader.showThumbnailDrawer.value || novelReader.showBookmarkDrawer.value) {
+            comicReader.showThumbnailDrawer.value = false;
+            novelReader.showBookmarkDrawer.value = false;
           } else {
             closeReader();
           }
@@ -759,66 +360,59 @@ createApp({
       }
     };
 
+    // 14. Lifecycle Hooks
     onMounted(async () => {
-      loadSettings();
-      updateScreenOrientation();
-      window.addEventListener('resize', updateScreenOrientation);
-      window.addEventListener('orientationchange', updateScreenOrientation);
-
-      await fetchSystemInfo();
-      await fetchSystemDrives();
-      await loadLibrary();
-
+      comicReader.updateScreenOrientation();
+      window.addEventListener('resize', comicReader.updateScreenOrientation);
+      window.addEventListener('orientationchange', comicReader.updateScreenOrientation);
       window.addEventListener('keydown', handleKeyDown);
-      document.addEventListener('fullscreenchange', () => {
-        isFullscreen.value = !!document.fullscreenElement;
-      });
+
+      try {
+        const info = await window.API.getSystemInfo();
+        systemInfo.value = info;
+      } catch (e) {
+        console.error(e);
+      }
+
+      try {
+        const drives = await window.API.getDrives();
+        systemDrives.value = drives;
+      } catch (e) {
+        console.error(e);
+      }
+
+      await loadLibrary();
     });
 
     onUnmounted(() => {
+      window.removeEventListener('resize', comicReader.updateScreenOrientation);
+      window.removeEventListener('orientationchange', comicReader.updateScreenOrientation);
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('resize', updateScreenOrientation);
-      window.removeEventListener('orientationchange', updateScreenOrientation);
-      if (touchController) touchController.destroy();
-      if (hudTimer) clearTimeout(hudTimer);
+      if (touchController) {
+        touchController.destroy();
+      }
     });
 
     return {
+      // Navigation & Library
       viewMode,
       currentPath,
       breadcrumbs,
       searchQuery,
+      filteredFolders,
+      filteredComics,
       loading,
       errorMsg,
       isRoot,
       bookshelves,
-      currentDirectory,
-      systemDrives,
-      filteredFolders,
-      filteredComics,
       showBookshelfModal,
       showInfoModal,
       showSettingsModal,
       newShelfPath,
       newShelfName,
       addingShelf,
+      systemDrives,
       systemInfo,
-      currentComic,
-      currentPageIndex,
-      weakNetworkMode,
-      toggleWeakNetworkMode,
-      getPageUrl,
-      readingMode,
-      readingDirection,
-      pageSpread,
-      isWideOrLandscape,
-      isDoublePage,
-      currentPairIndex,
-      togglePageSpread,
-      showHud,
-      showThumbnailDrawer,
-      isFullscreen,
-      currentZoom,
       navHistory,
       loadLibrary,
       navigateToCrumb,
@@ -827,36 +421,58 @@ createApp({
       handleDeleteBookshelf,
       openComic,
       closeReader,
-      downloadComic,
-      downloadingComics,
       goHome,
       goBack,
       goParent,
-      onLeftZoneClick,
-      onRightZoneClick,
-      goToPage,
-      prevPage,
-      nextPage,
-      toggleHud,
-      toggleFullscreen,
-      toggleReadingMode,
-      toggleReadingDirection,
-      handleWebtoonScroll,
+      downloadComic,
+      downloadingComics,
+      weakNetworkMode,
+      toggleWeakNetworkMode,
+
+      // i18n
       currentLang,
       t,
       setLanguage,
-      novelFontSize,
-      novelTheme,
-      novelChapterIndex,
-      changeNovelFontSize,
-      setNovelTheme,
-      goToNovelChapter,
-      handleNovelScroll,
-      bookBookmarks,
-      showBookmarkDrawer,
-      isCurrentChapterBookmarked,
-      toggleBookmark,
-      removeBookmark
+
+      // Comic Reader (Spread from comicReader module)
+      currentComic,
+      currentPageIndex,
+      readingMode: comicReader.readingMode,
+      readingDirection: comicReader.readingDirection,
+      pageSpread: comicReader.pageSpread,
+      isWideOrLandscape: comicReader.isWideOrLandscape,
+      isDoublePage: comicReader.isDoublePage,
+      currentPairIndex: comicReader.currentPairIndex,
+      showHud: comicReader.showHud,
+      showThumbnailDrawer: comicReader.showThumbnailDrawer,
+      isFullscreen: comicReader.isFullscreen,
+      currentZoom: comicReader.currentZoom,
+      getPageUrl: comicReader.getPageUrl,
+      goToPage: comicReader.goToPage,
+      prevPage: comicReader.prevPage,
+      nextPage: comicReader.nextPage,
+      onLeftZoneClick: comicReader.onLeftZoneClick,
+      onRightZoneClick: comicReader.onRightZoneClick,
+      toggleHud: comicReader.toggleHud,
+      toggleFullscreen: comicReader.toggleFullscreen,
+      toggleReadingMode: comicReader.toggleReadingMode,
+      toggleReadingDirection: comicReader.toggleReadingDirection,
+      togglePageSpread: comicReader.togglePageSpread,
+      handleWebtoonScroll: comicReader.handleWebtoonScroll,
+
+      // Novel Reader (Spread from novelReader module)
+      novelFontSize: novelReader.novelFontSize,
+      novelTheme: novelReader.novelTheme,
+      novelChapterIndex: novelReader.novelChapterIndex,
+      bookBookmarks: novelReader.bookBookmarks,
+      showBookmarkDrawer: novelReader.showBookmarkDrawer,
+      isCurrentChapterBookmarked: novelReader.isCurrentChapterBookmarked,
+      changeNovelFontSize: novelReader.changeNovelFontSize,
+      setNovelTheme: novelReader.setNovelTheme,
+      goToNovelChapter: novelReader.goToNovelChapter,
+      handleNovelScroll: novelReader.handleNovelScroll,
+      toggleBookmark: novelReader.toggleBookmark,
+      removeBookmark: novelReader.removeBookmark
     };
   }
 }).mount('#app');
