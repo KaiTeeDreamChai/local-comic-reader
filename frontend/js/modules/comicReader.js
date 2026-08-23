@@ -97,6 +97,9 @@ function useComicReader(currentComic, currentPageIndex, weakNetworkMode, t) {
         img.src = pageUrl;
         img.onload = () => loadedPages.value.add(pageUrl);
       }
+    });
+  };
+
   let webtoonObserver = null;
 
   const initWebtoonObserver = () => {
