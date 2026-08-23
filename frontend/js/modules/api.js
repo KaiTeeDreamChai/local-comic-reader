@@ -57,6 +57,13 @@ const API = {
     return data;
   },
 
+  async searchLibrary(query) {
+    const res = await fetch(`/api/library/search?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to search library');
+    return data;
+  },
+
   async getComicDetails(comicId) {
     const res = await fetch(`/api/comic/details?comic_id=${comicId}`);
     const data = await res.json();

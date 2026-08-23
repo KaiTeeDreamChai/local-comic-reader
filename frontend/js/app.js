@@ -78,13 +78,13 @@ createApp({
 
     // Filtered lists for search in library
     const filteredFolders = computed(() => {
-      if (!searchQuery.value.trim()) return currentDirectory.value.folders || [];
+      if (isSearchMode.value || !searchQuery.value.trim()) return currentDirectory.value.folders || [];
       const q = searchQuery.value.toLowerCase();
       return (currentDirectory.value.folders || []).filter(f => f.name.toLowerCase().includes(q));
     });
 
     const filteredComics = computed(() => {
-      if (!searchQuery.value.trim()) return currentDirectory.value.comics || [];
+      if (isSearchMode.value || !searchQuery.value.trim()) return currentDirectory.value.comics || [];
       const q = searchQuery.value.toLowerCase();
       return (currentDirectory.value.comics || []).filter(c => c.name.toLowerCase().includes(q));
     });
@@ -114,6 +114,31 @@ createApp({
     };
 
     // 8. Library Browsing & Actions
+    
+
+    const performGlobalSearch = async () => {
+      if (!searchQuery.value.trim()) {
+        if (isSearchMode.value) {
+          isSearchMode.value = false;
+          loadLibrary('');
+        }
+        return;
+      }
+      loading.value = true;
+      errorMsg.value = '';
+      try {
+        const data = await window.API.searchLibrary(searchQuery.value.trim());
+        isRoot.value = false;
+        isSearchMode.value = true;
+        currentDirectory.value = data;
+        breadcrumbs.value = [{ name: '首页', encoded_path: '' }, { name: '搜索: ' + searchQuery.value, encoded_path: '' }];
+      } catch (e) {
+        errorMsg.value = e.message || '搜索出错';
+      } finally {
+        loading.value = false;
+      }
+    };
+
     const loadLibrary = async (encodedPath = '') => {
       loading.value = true;
       errorMsg.value = '';

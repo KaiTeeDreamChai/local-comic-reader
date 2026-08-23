@@ -90,16 +90,17 @@
         </div>
 
         <!-- Right Header Actions -->
-        <div class="flex items-center gap-2 shrink-0">
-          <!-- Search input on larger screens -->
-          <div class="relative hidden md:block w-48 lg:w-64">
+        <div class="flex items-center gap-2 shrink-0 flex-1 md:flex-none justify-end">
+          <!-- Search input -->
+          <div class="relative w-full max-w-[200px] md:max-w-none md:w-48 lg:w-64">
             <input 
               v-model="searchQuery" 
+              @keyup.enter="performGlobalSearch"
               type="text" 
-              :placeholder="t('searchPlaceholder')" 
-              class="w-full bg-zinc-800/80 border border-zinc-700 text-xs rounded-full py-1.5 pl-8 pr-3 text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors"
+              :placeholder="t('searchPlaceholder') + ' (Enter 搜索全局)'" 
+              class="w-full bg-zinc-900/80 border border-zinc-700/50 text-zinc-200 text-sm rounded-xl pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all placeholder-zinc-500"
             >
-            <svg class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
           </div>
