@@ -584,7 +584,7 @@
         <div v-if="currentComic?.type === 'video'" class="w-full h-full flex items-center justify-center bg-black relative">
           <!-- Top Screen Tap Zone for Video HUD -->
           <div 
-            @click.stop="showHud = true; resetHudTimer();" 
+            @click.stop="showHud = true" 
             class="absolute top-0 inset-x-0 h-24 z-30 cursor-pointer pointer-events-auto"
             :title="t('topExitHint')"
           ></div>
@@ -725,7 +725,7 @@
         >
           <!-- Top Screen Tap Zone for Webtoon Mode -->
           <div 
-            @click.stop="showHud = true; resetHudTimer();" 
+            @click.stop="showHud = true" 
             class="sticky top-0 inset-x-0 h-16 -mt-12 z-30 cursor-pointer pointer-events-auto"
             :title="t('topExitHint')"
           ></div>

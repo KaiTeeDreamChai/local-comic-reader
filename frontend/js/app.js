@@ -618,17 +618,18 @@ createApp({
     // HUD & Fullscreen Controls
     const toggleHud = () => {
       showHud.value = !showHud.value;
-      if (showHud.value) {
-        resetHudTimer();
+      if (!showHud.value) {
+        showThumbnailDrawer.value = false;
+        showBookmarkDrawer.value = false;
       }
     };
 
     const resetHudTimer = () => {
-      if (hudTimer) clearTimeout(hudTimer);
-      hudTimer = setTimeout(() => {
-        showHud.value = false;
-        showThumbnailDrawer.value = false;
-      }, 5000);
+      // Intentionally empty: do not automatically hide HUD or force fullscreen
+      if (hudTimer) {
+        clearTimeout(hudTimer);
+        hudTimer = null;
+      }
     };
 
     const toggleFullscreen = () => {
