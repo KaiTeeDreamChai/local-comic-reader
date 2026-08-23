@@ -9,6 +9,7 @@ createApp({
     const currentPath = ref('');
     const breadcrumbs = ref([]);
     const searchQuery = ref('');
+    const isSearchMode = ref(false);
     const loading = ref(false);
     const errorMsg = ref('');
     const navHistory = ref([]); // History stack for back navigation
@@ -164,6 +165,7 @@ createApp({
     const loadLibrary = async (encodedPath = '') => {
       loading.value = true;
       errorMsg.value = '';
+      isSearchMode.value = false;
       try {
         const data = await window.API.browseLibrary(encodedPath);
         if (data.is_root) {
@@ -478,6 +480,7 @@ createApp({
       currentPath,
       breadcrumbs,
       searchQuery,
+      isSearchMode,
       performGlobalSearch,
       filteredFolders,
       filteredComics,
