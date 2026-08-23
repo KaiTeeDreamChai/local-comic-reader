@@ -184,16 +184,20 @@ def get_comic_details(comic_id: str = Query(...)):
 
 
 @app.get("/api/comic/page")
-def get_comic_page(comic_id: str = Query(...), page_index: int = Query(0)):
-    """Stream a single page image."""
+def get_comic_page(comic_id: str = Query(...), page_index: int = Query(0), optimize: bool = Query(False)):
+    """Stream a single page image (supports weak network WebP optimization & caching)."""
     try:
         file_path = decode_path(comic_id)
-        img_bytes, media_type = ComicReader.get_page_bytes(file_path, page_index)
+        if optimize:
+            img_bytes, media_type = ComicReader.get_optimized_page_bytes(file_path, page_index)
+        else:
+            img_bytes, media_type = ComicReader.get_page_bytes(file_path, page_index)
+
         return Response(
             content=img_bytes,
             media_type=media_type,
             headers={
-                "Cache-Control": "public, max-age=86400",
+                "Cache-Control": "public, max-age=2592000, immutable",
                 "X-Content-Type-Options": "nosniff"
             }
         )

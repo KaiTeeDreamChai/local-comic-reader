@@ -242,3 +242,49 @@ class ComicReader:
         except Exception as e:
             print(f"Thumbnail generation error: {e}")
             return raw_bytes, "image/jpeg"
+
+    @staticmethod
+    def get_optimized_page_bytes(path_str: str, page_index: int, max_dimension: int = 2048, quality: int = 82) -> Tuple[bytes, str]:
+        """
+        Weak network optimization:
+        Compresses image into optimized WebP with lanczos scaling (max 2048px)
+        and caches on disk for zero-latency subsequent delivery.
+        """
+        mtime = os.path.getmtime(path_str) if os.path.exists(path_str) else 0
+        cache_key = f"opt:{path_str}:{mtime}:{page_index}:{max_dimension}:{quality}"
+        cache_file = get_cache_path(cache_key, ext=".webp")
+
+        if cache_file.exists():
+            with open(cache_file, "rb") as f:
+                return f.read(), "image/webp"
+
+        raw_bytes, _ = ComicReader.get_page_bytes(path_str, page_index)
+
+        try:
+            with Image.open(io.BytesIO(raw_bytes)) as im:
+                if im.mode in ('RGBA', 'LA') or (im.mode == 'P' and 'transparency' in im.info):
+                    alpha = im.convert('RGBA')
+                    bg = Image.new('RGBA', alpha.size, (255, 255, 255))
+                    bg.paste(alpha, mask=alpha)
+                    im = bg.convert('RGB')
+                elif im.mode != 'RGB':
+                    im = im.convert('RGB')
+
+                # Resize if larger than max_dimension
+                w, h = im.size
+                if max(w, h) > max_dimension:
+                    im.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
+
+                output = io.BytesIO()
+                im.save(output, format="WEBP", quality=quality, method=4)
+                opt_bytes = output.getvalue()
+
+                # Cache to disk
+                with open(cache_file, "wb") as f:
+                    f.write(opt_bytes)
+
+                return opt_bytes, "image/webp"
+        except Exception as e:
+            print(f"Optimization fallback: {e}")
+            return raw_bytes, "image/jpeg"
+

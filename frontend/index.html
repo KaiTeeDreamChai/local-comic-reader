@@ -83,6 +83,23 @@
             </svg>
           </div>
 
+          <!-- Weak Network Turbo Boost Toggle Button -->
+          <button 
+            @click="toggleWeakNetworkMode"
+            :title="weakNetworkMode ? '弱网优化模式：已开启（智能高压WebP与深度预加载）' : '弱网优化模式：已关闭（点击开启）'"
+            :class="weakNetworkMode ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-lg shadow-amber-500/10' : 'bg-zinc-800/80 border-zinc-700/60 text-zinc-400 hover:text-zinc-200'"
+            class="flex items-center gap-1.5 px-2.5 py-1.5 border rounded-lg text-xs font-semibold transition-all select-none"
+          >
+            <svg class="w-4 h-4" :class="weakNetworkMode ? 'text-amber-400 animate-pulse' : 'text-zinc-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+            <span class="hidden sm:inline">{{ weakNetworkMode ? '弱网加速: 开' : '弱网加速: 关' }}</span>
+            <span 
+              :class="weakNetworkMode ? 'bg-amber-400 ring-2 ring-amber-400/40' : 'bg-zinc-600'" 
+              class="w-2 h-2 rounded-full transition-colors"
+            ></span>
+          </button>
+
           <!-- Bookshelf Manager Button -->
           <button 
             @click="showBookshelfModal = true"
@@ -396,6 +413,18 @@
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
           </button>
+
+          <!-- Weak Network Toggle in Reader HUD -->
+          <button 
+            @click="toggleWeakNetworkMode"
+            :title="weakNetworkMode ? '弱网加速模式：已开启' : '弱网加速模式：已关闭'"
+            :class="weakNetworkMode ? 'text-amber-400 bg-amber-500/20' : 'text-zinc-400 hover:text-zinc-200'"
+            class="p-2 rounded-lg transition-colors flex items-center gap-1 text-xs"
+          >
+            <svg class="w-4 h-4" :class="{ 'animate-pulse text-amber-400': weakNetworkMode }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -407,7 +436,7 @@
           <div class="reader-image-container">
             <img 
               v-if="currentComic?.pages[currentPageIndex]"
-              :src="currentComic.pages[currentPageIndex].url" 
+              :src="getPageUrl(currentPageIndex)" 
               :alt="`Page ${currentPageIndex + 1}`" 
               class="reader-img"
             >
@@ -434,7 +463,7 @@
             class="webtoon-item"
           >
             <img 
-              :src="page.url" 
+              :src="getPageUrl(idx)" 
               loading="lazy" 
               :alt="`Page ${idx + 1}`"
               class="webtoon-img"

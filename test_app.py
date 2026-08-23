@@ -91,10 +91,16 @@ for comic in data_sub["comics"]:
         assert page_names == ['page_1.png', 'page_2.png', 'page_3.png', 'page_10.png'], f"Sorting failed: {page_names}"
         print("✓ Natural sorting verified correctly:", page_names)
 
-    # Test get page image
+    # Test get page image (normal and optimized)
     res_page = client.get(f"/api/comic/page?comic_id={c_id}&page_index=0")
     assert res_page.status_code == 200
     assert len(res_page.content) > 100
+
+    res_opt_page = client.get(f"/api/comic/page?comic_id={c_id}&page_index=0&optimize=true")
+    assert res_opt_page.status_code == 200
+    assert res_opt_page.headers["content-type"] == "image/webp"
+    assert len(res_opt_page.content) > 100
+    print(f"✓ Optimized WebP page verified for '{info['title']}' ({len(res_opt_page.content)} bytes)")
     
     # Test get thumbnail image
     res_thumb = client.get(f"/api/comic/thumbnail?comic_id={c_id}&page_index=0")

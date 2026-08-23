@@ -37,9 +37,26 @@ createApp({
     const isFullscreen = ref(false);
     const currentZoom = ref(1);
     const loadedPages = ref(new Set());
+    const weakNetworkMode = ref(localStorage.getItem('comic_weak_net_mode') === 'true');
 
     let touchController = null;
     let hudTimer = null;
+
+    // Toggle Weak Network Optimization Mode
+    const toggleWeakNetworkMode = () => {
+      weakNetworkMode.value = !weakNetworkMode.value;
+      localStorage.setItem('comic_weak_net_mode', weakNetworkMode.value ? 'true' : 'false');
+      loadedPages.value.clear();
+      if (currentComic.value) {
+        preloadPages();
+      }
+    };
+
+    const getPageUrl = (pageIndex) => {
+      if (!currentComic.value || !currentComic.value.pages || !currentComic.value.pages[pageIndex]) return '';
+      const base = currentComic.value.pages[pageIndex].url;
+      return weakNetworkMode.value ? `${base}&optimize=1` : base;
+    };
 
     // Load App Settings from LocalStorage or Server
     const loadSettings = () => {
@@ -340,13 +357,17 @@ createApp({
       const cur = currentPageIndex.value;
       const total = currentComic.value.total_pages;
 
-      // Preload cur-1, cur+1, cur+2
-      const targets = [cur, cur + 1, cur + 2, cur - 1].filter(idx => idx >= 0 && idx < total);
+      // Weak network mode aggressively preloads 4 forward and 2 backward
+      const targets = weakNetworkMode.value
+        ? [cur, cur + 1, cur + 2, cur + 3, cur + 4, cur - 1, cur - 2].filter(idx => idx >= 0 && idx < total)
+        : [cur, cur + 1, cur + 2, cur - 1].filter(idx => idx >= 0 && idx < total);
+
       targets.forEach(idx => {
-        if (!loadedPages.value.has(idx)) {
+        const pageUrl = getPageUrl(idx);
+        if (!loadedPages.value.has(pageUrl)) {
           const img = new Image();
-          img.src = currentComic.value.pages[idx].url;
-          img.onload = () => loadedPages.value.add(idx);
+          img.src = pageUrl;
+          img.onload = () => loadedPages.value.add(pageUrl);
         }
       });
     };
@@ -533,6 +554,9 @@ createApp({
       systemInfo,
       currentComic,
       currentPageIndex,
+      weakNetworkMode,
+      toggleWeakNetworkMode,
+      getPageUrl,
       readingMode,
       readingDirection,
       showHud,
