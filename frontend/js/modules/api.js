@@ -81,6 +81,79 @@ const API = {
 
   getDownloadUrl(comicId) {
     return `/api/comic/download?comic_id=${comicId}`;
+  },
+
+  // Collections & Categories
+  async getCollections() {
+    const res = await fetch('/api/collections/all');
+    if (!res.ok) throw new Error('Failed to fetch collections');
+    return await res.json();
+  },
+
+  async toggleFavorite(item) {
+    const res = await fetch('/api/collections/favorite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to toggle favorite');
+    return data;
+  },
+
+  async toggleReadLater(item) {
+    const res = await fetch('/api/collections/read_later', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to toggle read later');
+    return data;
+  },
+
+  async createCategory(name) {
+    const res = await fetch('/api/collections/category/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to create category');
+    return data;
+  },
+
+  async renameCategory(categoryId, name) {
+    const res = await fetch('/api/collections/category/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category_id: categoryId, name })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to rename category');
+    return data;
+  },
+
+  async deleteCategory(categoryId) {
+    const res = await fetch('/api/collections/category/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category_id: categoryId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to delete category');
+    return data;
+  },
+
+  async toggleCategoryItem(categoryId, item) {
+    const res = await fetch('/api/collections/category/toggle_item', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category_id: categoryId, item })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to update category item');
+    return data;
   }
 };
 

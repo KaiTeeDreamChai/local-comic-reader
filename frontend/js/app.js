@@ -6,6 +6,7 @@ createApp({
   setup() {
     // 1. Navigation & View State
     const viewMode = ref('library'); // 'library' | 'reader'
+    const libraryViewMode = ref('bookshelves'); // 'bookshelves' | 'favorites' | 'read_later' | 'categories' | 'category_detail'
     const currentPath = ref('');
     const breadcrumbs = ref([]);
     const searchQuery = ref('');
@@ -16,13 +17,34 @@ createApp({
     const errorMsg = ref('');
     const navHistory = ref([]); // History stack for back navigation
 
-    // 2. Library Data
+    // 2. Collections & Categories Data
+    const favorites = ref([]);
+    const readLater = ref([]);
+    const categories = ref([]);
+    const currentCategory = ref(null);
+    const showCategorySelectModal = ref(false);
+    const targetComicForCategory = ref(null);
+    const newCategoryNameInput = ref('');
+    const showCreateCategoryModal = ref(false);
+
+    // Fast lookup sets for active status badges & buttons
+    const favoriteIdSet = computed(() => new Set(favorites.value.map(x => x.id)));
+    const readLaterIdSet = computed(() => new Set(readLater.value.map(x => x.id)));
+
+    const isCurrentComicFavorite = computed(() => {
+      return currentComic.value && favoriteIdSet.value.has(currentComic.value.id);
+    });
+    const isCurrentComicReadLater = computed(() => {
+      return currentComic.value && readLaterIdSet.value.has(currentComic.value.id);
+    });
+
+    // 3. Library Data
     const isRoot = ref(true);
     const bookshelves = ref([]);
     const currentDirectory = ref({ name: '', current_path: '', folders: [], comics: [] });
     const systemDrives = ref([]);
 
-    // 3. Modals State
+    // 4. Modals State
     const showBookshelfModal = ref(false);
     const showInfoModal = ref(false);
     const showSettingsModal = ref(false);
@@ -30,12 +52,12 @@ createApp({
     const newShelfName = ref('');
     const addingShelf = ref(false);
 
-    // 4. System & Network State
+    // 5. System & Network State
     const systemInfo = ref({ lan_urls: [], local_ips: [], port: 8000, platform: '' });
     const downloadingComics = ref(new Set());
     const weakNetworkMode = ref(localStorage.getItem('comic_weak_net_mode') === 'true');
 
-    // 5. Common Reader State
+    // 6. Common Reader State
     const currentComic = ref(null);
     const currentPageIndex = ref(0);
 
@@ -114,6 +136,164 @@ createApp({
       return (currentDirectory.value.comics || []).filter(c => fuzzyMatch(searchQuery.value, c.name));
     });
 
+    const filteredFavorites = computed(() => {
+      if (!searchQuery.value.trim()) return favorites.value;
+      return favorites.value.filter(item => fuzzyMatch(searchQuery.value, item.title || item.name));
+    });
+
+    const filteredReadLater = computed(() => {
+      if (!searchQuery.value.trim()) return readLater.value;
+      return readLater.value.filter(item => fuzzyMatch(searchQuery.value, item.title || item.name));
+    });
+
+    const filteredCategories = computed(() => {
+      if (!searchQuery.value.trim()) return categories.value;
+      return categories.value.filter(cat => fuzzyMatch(searchQuery.value, cat.name));
+    });
+
+    const filteredCategoryItems = computed(() => {
+      if (!currentCategory.value) return [];
+      const items = currentCategory.value.items || [];
+      if (!searchQuery.value.trim()) return items;
+      return items.filter(item => fuzzyMatch(searchQuery.value, item.title || item.name));
+    });
+
+    // Collections & Categories Handlers
+    const loadCollections = async () => {
+      try {
+        const data = await window.API.getCollections();
+        favorites.value = data.favorites || [];
+        readLater.value = data.read_later || [];
+        categories.value = data.categories || [];
+        if (currentCategory.value) {
+          currentCategory.value = categories.value.find(c => c.id === currentCategory.value.id) || null;
+        }
+      } catch (e) {
+        console.error('Failed to load collections:', e);
+      }
+    };
+
+    const toggleFavorite = async (item) => {
+      if (!item) return;
+      try {
+        const res = await window.API.toggleFavorite(item);
+        favorites.value = res.favorites || [];
+      } catch (e) {
+        alert(e.message || '操作失败');
+      }
+    };
+
+    const toggleReadLater = async (item) => {
+      if (!item) return;
+      try {
+        const res = await window.API.toggleReadLater(item);
+        readLater.value = res.read_later || [];
+      } catch (e) {
+        alert(e.message || '操作失败');
+      }
+    };
+
+    const openFavoritesView = () => {
+      viewMode.value = 'library';
+      libraryViewMode.value = 'favorites';
+      currentPath.value = 'favorites';
+      breadcrumbs.value = [{ name: t('home'), encoded_path: '' }, { name: '🌟 ' + t('defaultFavoritesFolder'), is_collection: true }];
+      searchQuery.value = '';
+      showMobileMenu.value = false;
+    };
+
+    const openReadLaterView = () => {
+      viewMode.value = 'library';
+      libraryViewMode.value = 'read_later';
+      currentPath.value = 'read_later';
+      breadcrumbs.value = [{ name: t('home'), encoded_path: '' }, { name: '🕒 ' + t('readLaterTitle'), is_collection: true }];
+      searchQuery.value = '';
+      showMobileMenu.value = false;
+    };
+
+    const openCategoriesView = () => {
+      viewMode.value = 'library';
+      libraryViewMode.value = 'categories';
+      currentPath.value = 'categories';
+      currentCategory.value = null;
+      breadcrumbs.value = [{ name: t('home'), encoded_path: '' }, { name: '📁 ' + t('categoriesTitle'), is_collection: true }];
+      searchQuery.value = '';
+      showMobileMenu.value = false;
+    };
+
+    const openCategoryDetail = (category) => {
+      viewMode.value = 'library';
+      libraryViewMode.value = 'category_detail';
+      currentCategory.value = category;
+      currentPath.value = `category_${category.id}`;
+      breadcrumbs.value = [
+        { name: t('home'), encoded_path: '' },
+        { name: '📁 ' + t('categoriesTitle'), to_categories: true },
+        { name: category.name, is_collection: true }
+      ];
+      searchQuery.value = '';
+    };
+
+    const handleCreateCategory = async (name) => {
+      const cleanName = (name || newCategoryNameInput.value).trim();
+      if (!cleanName) return;
+      try {
+        const newCat = await window.API.createCategory(cleanName);
+        newCategoryNameInput.value = '';
+        showCreateCategoryModal.value = false;
+        await loadCollections();
+        return newCat;
+      } catch (e) {
+        alert(e.message || '创建分类失败');
+      }
+    };
+
+    const handleRenameCategory = async (cat) => {
+      const newName = prompt(t('categoryNamePlaceholder'), cat.name);
+      if (!newName || !newName.trim() || newName.trim() === cat.name) return;
+      try {
+        await window.API.renameCategory(cat.id, newName.trim());
+        await loadCollections();
+      } catch (e) {
+        alert(e.message || '重命名失败');
+      }
+    };
+
+    const handleDeleteCategory = async (cat) => {
+      if (!confirm(t('confirmDeleteCategory', { name: cat.name }))) return;
+      try {
+        await window.API.deleteCategory(cat.id);
+        if (currentCategory.value && currentCategory.value.id === cat.id) {
+          openCategoriesView();
+        }
+        await loadCollections();
+      } catch (e) {
+        alert(e.message || '删除失败');
+      }
+    };
+
+    const openCategorySelectModal = (comic) => {
+      targetComicForCategory.value = comic;
+      showCategorySelectModal.value = true;
+    };
+
+    const isComicInCategory = (categoryId, comicId) => {
+      const cat = categories.value.find(c => c.id === categoryId);
+      return cat ? cat.items.some(x => x.id === comicId) : false;
+    };
+
+    const toggleComicCategory = async (categoryId, comic) => {
+      try {
+        const res = await window.API.toggleCategoryItem(categoryId, comic);
+        categories.value = res.categories || [];
+        if (currentCategory.value && currentCategory.value.id === categoryId) {
+          currentCategory.value = res.category;
+        }
+      } catch (e) {
+        alert(e.message || '操作分类失败');
+      }
+    };
+
     const updateBreadcrumbs = (data) => {
       const sep = data.current_path.includes('\\') ? '\\' : '/';
       const parts = data.current_path.split(sep).filter(Boolean);
@@ -167,14 +347,17 @@ createApp({
 
     const loadLibrary = async (encodedPath = '') => {
       loading.value = true;
+      loading.value = true;
       errorMsg.value = '';
       isSearchMode.value = false;
+      libraryViewMode.value = 'bookshelves';
+      currentCategory.value = null;
       try {
         const data = await window.API.browseLibrary(encodedPath);
         if (data.is_root) {
           isRoot.value = true;
           bookshelves.value = data.bookshelves || [];
-          breadcrumbs.value = [{ name: '首页', encoded_path: '' }];
+          breadcrumbs.value = [{ name: t('home'), encoded_path: '' }];
           currentPath.value = '';
         } else {
           isRoot.value = false;
@@ -209,9 +392,17 @@ createApp({
     };
 
     const navigateToCrumb = (crumb) => {
+      if (crumb.to_categories) {
+        openCategoriesView();
+        return;
+      }
+      if (crumb.is_collection) {
+        return;
+      }
       pushNavHistory(currentPath.value ? btoa(unescape(encodeURIComponent(currentPath.value))) : '');
       searchQuery.value = '';
       isSearchMode.value = false;
+      libraryViewMode.value = 'bookshelves';
       loadLibrary(crumb.encoded_path);
     };
 
@@ -219,6 +410,7 @@ createApp({
       pushNavHistory(currentPath.value ? btoa(unescape(encodeURIComponent(currentPath.value))) : '');
       searchQuery.value = '';
       isSearchMode.value = false;
+      libraryViewMode.value = 'bookshelves';
       highlightedItemId.value = folder.id;
       loadLibrary(folder.id);
     };
@@ -324,6 +516,8 @@ createApp({
       if (viewMode.value === 'reader') {
         closeReader();
       }
+      libraryViewMode.value = 'bookshelves';
+      currentCategory.value = null;
       searchQuery.value = '';
       loadLibrary('');
     };
@@ -331,6 +525,14 @@ createApp({
     const goBack = () => {
       if (viewMode.value === 'reader') {
         closeReader();
+        return;
+      }
+      if (libraryViewMode.value === 'category_detail') {
+        openCategoriesView();
+        return;
+      }
+      if (libraryViewMode.value === 'favorites' || libraryViewMode.value === 'read_later' || libraryViewMode.value === 'categories') {
+        goHome();
         return;
       }
       if (navHistory.value.length > 0) {
@@ -500,6 +702,7 @@ createApp({
         console.error(e);
       }
 
+      await loadCollections();
       await loadLibrary();
     });
 
@@ -515,6 +718,7 @@ createApp({
     return {
       // Navigation & Library
       viewMode,
+      libraryViewMode,
       currentPath,
       breadcrumbs,
       searchQuery,
@@ -524,6 +728,10 @@ createApp({
       performGlobalSearch,
       filteredFolders,
       filteredComics,
+      filteredFavorites,
+      filteredReadLater,
+      filteredCategories,
+      filteredCategoryItems,
       loading,
       errorMsg,
       isRoot,
@@ -552,6 +760,32 @@ createApp({
       downloadingComics,
       weakNetworkMode,
       toggleWeakNetworkMode,
+
+      // Collections & Categories
+      favorites,
+      readLater,
+      categories,
+      currentCategory,
+      favoriteIdSet,
+      readLaterIdSet,
+      isCurrentComicFavorite,
+      isCurrentComicReadLater,
+      showCategorySelectModal,
+      targetComicForCategory,
+      newCategoryNameInput,
+      showCreateCategoryModal,
+      toggleFavorite,
+      toggleReadLater,
+      openFavoritesView,
+      openReadLaterView,
+      openCategoriesView,
+      openCategoryDetail,
+      handleCreateCategory,
+      handleRenameCategory,
+      handleDeleteCategory,
+      openCategorySelectModal,
+      isComicInCategory,
+      toggleComicCategory,
 
       // i18n
       currentLang,

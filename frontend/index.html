@@ -129,6 +129,48 @@
             </svg>
           </div>
 
+          <!-- 收藏 (Favorites) Button -->
+          <button 
+            @click="openFavoritesView" 
+            :title="t('navFavorites')"
+            :class="libraryViewMode === 'favorites' ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 shadow-rose-500/10' : 'bg-zinc-800/80 border-zinc-700/60 text-zinc-300 hover:text-white'"
+            class="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-semibold shadow-sm transition-all select-none"
+          >
+            <svg class="w-4 h-4 text-rose-400" fill="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+            <span>{{ t('navFavorites') }}</span>
+            <span v-if="favorites.length > 0" class="px-1.5 py-0.2 bg-rose-500/90 text-white rounded-full text-[10px]">{{ favorites.length }}</span>
+          </button>
+
+          <!-- 稍后再看 (Read Later) Button -->
+          <button 
+            @click="openReadLaterView" 
+            :title="t('navReadLater')"
+            :class="libraryViewMode === 'read_later' ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 shadow-amber-500/10' : 'bg-zinc-800/80 border-zinc-700/60 text-zinc-300 hover:text-white'"
+            class="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-semibold shadow-sm transition-all select-none"
+          >
+            <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>{{ t('navReadLater') }}</span>
+            <span v-if="readLater.length > 0" class="px-1.5 py-0.2 bg-amber-500/90 text-white rounded-full text-[10px]">{{ readLater.length }}</span>
+          </button>
+
+          <!-- 分类 (Categories) Button -->
+          <button 
+            @click="openCategoriesView" 
+            :title="t('navCategories')"
+            :class="libraryViewMode === 'categories' || libraryViewMode === 'category_detail' ? 'bg-blue-500/20 text-blue-400 border-blue-500/50 shadow-blue-500/10' : 'bg-zinc-800/80 border-zinc-700/60 text-zinc-300 hover:text-white'"
+            class="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-semibold shadow-sm transition-all select-none"
+          >
+            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+            </svg>
+            <span>{{ t('navCategories') }}</span>
+            <span v-if="categories.length > 0" class="px-1.5 py-0.2 bg-blue-500/90 text-white rounded-full text-[10px]">{{ categories.length }}</span>
+          </button>
+
           <!-- Weak Network Turbo Boost Toggle Button -->
           <button 
             @click="toggleWeakNetworkMode"
@@ -249,13 +291,64 @@
 
             <!-- Actions List -->
             <div class="space-y-2 pt-1">
+              <!-- 收藏 (Favorites) -->
+              <button 
+                @click="openFavoritesView" 
+                class="w-full flex items-center justify-between p-3 rounded-xl transition-all"
+                :class="libraryViewMode === 'favorites' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-zinc-800/70 hover:bg-zinc-800 text-zinc-200'"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded-lg bg-rose-600/20 text-rose-400">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                  </div>
+                  <span class="text-sm font-medium">{{ t('navFavorites') }}</span>
+                </div>
+                <span v-if="favorites.length > 0" class="px-2 py-0.5 bg-rose-500 text-white rounded-full text-xs font-semibold">{{ favorites.length }}</span>
+              </button>
+
+              <!-- 稍后再看 (Read Later) -->
+              <button 
+                @click="openReadLaterView" 
+                class="w-full flex items-center justify-between p-3 rounded-xl transition-all"
+                :class="libraryViewMode === 'read_later' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-zinc-800/70 hover:bg-zinc-800 text-zinc-200'"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded-lg bg-amber-600/20 text-amber-400">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                  </div>
+                  <span class="text-sm font-medium">{{ t('navReadLater') }}</span>
+                </div>
+                <span v-if="readLater.length > 0" class="px-2 py-0.5 bg-amber-500 text-white rounded-full text-xs font-semibold">{{ readLater.length }}</span>
+              </button>
+
+              <!-- 分类 (Categories) -->
+              <button 
+                @click="openCategoriesView" 
+                class="w-full flex items-center justify-between p-3 rounded-xl transition-all"
+                :class="libraryViewMode === 'categories' || libraryViewMode === 'category_detail' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40' : 'bg-zinc-800/70 hover:bg-zinc-800 text-zinc-200'"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded-lg bg-blue-600/20 text-blue-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                    </svg>
+                  </div>
+                  <span class="text-sm font-medium">{{ t('navCategories') }}</span>
+                </div>
+                <span v-if="categories.length > 0" class="px-2 py-0.5 bg-blue-500 text-white rounded-full text-xs font-semibold">{{ categories.length }}</span>
+              </button>
+
               <!-- Bookshelf Manage -->
               <button 
                 @click="showBookshelfModal = true; showMobileMenu = false;" 
                 class="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-800/70 hover:bg-zinc-800 text-zinc-200 transition-colors"
               >
                 <div class="flex items-center gap-3">
-                  <div class="p-2 rounded-lg bg-blue-600/20 text-blue-400">
+                  <div class="p-2 rounded-lg bg-indigo-600/20 text-indigo-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -346,13 +439,336 @@
             <button @click="goBack" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-sm font-medium transition-colors">
               {{ t('backToLast') }}
             </button>
-            <button @click="goHome" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30 transition-colors">
-              {{ t('backToHome') }}
-            </button>
+            <button @click="goHome" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg        <!-- A. 收藏 (Favorites) View -->
+        <div v-else-if="libraryViewMode === 'favorites'">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
+              <span class="text-rose-400">❤️</span>
+              <span>{{ t('defaultFavoritesFolder') }}</span>
+              <span class="text-xs bg-rose-950/60 text-rose-300 border border-rose-800/40 px-2 py-0.5 rounded-full">{{ favorites.length }}</span>
+            </h2>
+          </div>
+
+          <div v-if="favorites.length === 0" class="text-center py-20 border-2 border-dashed border-zinc-800 rounded-2xl p-8">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-rose-950/30 text-rose-400 flex items-center justify-center mb-4 text-2xl">
+              ❤️
+            </div>
+            <h3 class="text-base font-semibold text-zinc-200 mb-1">{{ t('navFavorites') }}</h3>
+            <p class="text-sm text-zinc-400 max-w-sm mx-auto">{{ t('emptyFavorites') }}</p>
+          </div>
+
+          <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div 
+              v-for="item in filteredFavorites" 
+              :key="item.id"
+              @click="item.type === 'folder' ? openFolder(item) : openComic(item)"
+              class="comic-card group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer flex flex-col transition-all duration-300 hover:border-zinc-700"
+            >
+              <div class="aspect-[3/4] bg-zinc-800 relative overflow-hidden flex items-center justify-center">
+                <img 
+                  v-if="item.cover_url" 
+                  :src="item.cover_url" 
+                  loading="lazy" 
+                  alt="" 
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                >
+                <div v-else class="text-zinc-600 flex flex-col items-center justify-center p-4">
+                  <span class="text-xs">{{ t('noCover') }}</span>
+                </div>
+
+                <!-- Floating Quick Actions on Card Top -->
+                <div class="absolute top-2 right-2 flex items-center gap-1 z-10">
+                  <button 
+                    @click.stop="toggleFavorite(item)" 
+                    title="取消收藏"
+                    class="p-1.5 bg-black/75 hover:bg-rose-600 text-rose-400 hover:text-white backdrop-blur rounded-lg shadow transition-all"
+                  >
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                  </button>
+                  <button 
+                    @click.stop="openCategorySelectModal(item)" 
+                    :title="t('addToCategory')"
+                    class="p-1.5 bg-black/75 hover:bg-blue-600 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow transition-all"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Type Badge -->
+                <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
+                  {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
+                </div>
+              </div>
+
+              <div class="p-2.5">
+                <h4 class="font-medium text-xs text-zinc-100 group-hover:text-rose-400 transition-colors line-clamp-2 leading-relaxed" :title="item.title || item.name">
+                  {{ item.title || item.name }}
+                </h4>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Top Level Bookshelves View (Root) -->
+        <!-- B. 稍后再看 (Read Later) View -->
+        <div v-else-if="libraryViewMode === 'read_later'">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
+              <span class="text-amber-400">🕒</span>
+              <span>{{ t('readLaterTitle') }}</span>
+              <span class="text-xs bg-amber-950/60 text-amber-300 border border-amber-800/40 px-2 py-0.5 rounded-full">{{ readLater.length }}</span>
+            </h2>
+          </div>
+
+          <div v-if="readLater.length === 0" class="text-center py-20 border-2 border-dashed border-zinc-800 rounded-2xl p-8">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-amber-950/30 text-amber-400 flex items-center justify-center mb-4 text-2xl">
+              🕒
+            </div>
+            <h3 class="text-base font-semibold text-zinc-200 mb-1">{{ t('navReadLater') }}</h3>
+            <p class="text-sm text-zinc-400 max-w-sm mx-auto">{{ t('emptyReadLater') }}</p>
+          </div>
+
+          <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div 
+              v-for="item in filteredReadLater" 
+              :key="item.id"
+              @click="item.type === 'folder' ? openFolder(item) : openComic(item)"
+              class="comic-card group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer flex flex-col transition-all duration-300 hover:border-zinc-700"
+            >
+              <div class="aspect-[3/4] bg-zinc-800 relative overflow-hidden flex items-center justify-center">
+                <img 
+                  v-if="item.cover_url" 
+                  :src="item.cover_url" 
+                  loading="lazy" 
+                  alt="" 
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                >
+                <div v-else class="text-zinc-600 flex flex-col items-center justify-center p-4">
+                  <span class="text-xs">{{ t('noCover') }}</span>
+                </div>
+
+                <!-- Floating Quick Actions on Card Top -->
+                <div class="absolute top-2 right-2 flex items-center gap-1 z-10">
+                  <button 
+                    @click.stop="toggleReadLater(item)" 
+                    title="从稍后再看中移除"
+                    class="p-1.5 bg-black/75 hover:bg-amber-600 text-amber-400 hover:text-white backdrop-blur rounded-lg shadow transition-all"
+                  >
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                  </button>
+                  <button 
+                    @click.stop="openCategorySelectModal(item)" 
+                    :title="t('addToCategory')"
+                    class="p-1.5 bg-black/75 hover:bg-blue-600 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow transition-all"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Type Badge -->
+                <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
+                  {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
+                </div>
+              </div>
+
+              <div class="p-2.5">
+                <h4 class="font-medium text-xs text-zinc-100 group-hover:text-amber-400 transition-colors line-clamp-2 leading-relaxed" :title="item.title || item.name">
+                  {{ item.title || item.name }}
+                </h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C. 自定义分类列表 (Categories List) View -->
+        <div v-else-if="libraryViewMode === 'categories'">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
+              <span class="text-blue-400">📁</span>
+              <span>{{ t('categoriesTitle') }}</span>
+              <span class="text-xs bg-blue-950/60 text-blue-300 border border-blue-800/40 px-2 py-0.5 rounded-full">{{ categories.length }}</span>
+            </h2>
+            <button 
+              @click="showCreateCategoryModal = true" 
+              class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow transition-colors"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              <span>{{ t('createCategory') }}</span>
+            </button>
+          </div>
+
+          <div v-if="categories.length === 0" class="text-center py-20 border-2 border-dashed border-zinc-800 rounded-2xl p-8">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-blue-950/30 text-blue-400 flex items-center justify-center mb-4 text-2xl">
+              📁
+            </div>
+            <h3 class="text-base font-semibold text-zinc-200 mb-1">{{ t('navCategories') }}</h3>
+            <p class="text-sm text-zinc-400 max-w-sm mx-auto mb-5">{{ t('emptyCategories') }}</p>
+            <button @click="showCreateCategoryModal = true" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30">
+              {{ t('createCategory') }}
+            </button>
+          </div>
+
+          <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div 
+              v-for="cat in filteredCategories" 
+              :key="cat.id"
+              @click="openCategoryDetail(cat)"
+              class="comic-card group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer flex flex-col transition-all duration-300 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/5"
+            >
+              <div class="aspect-[3/4] bg-zinc-800/60 relative overflow-hidden flex items-center justify-center">
+                <img 
+                  v-if="cat.items && cat.items.length > 0 && cat.items[0].cover_url" 
+                  :src="cat.items[0].cover_url" 
+                  loading="lazy" 
+                  alt="" 
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                >
+                <div v-else class="text-zinc-600 flex flex-col items-center justify-center p-4 text-center">
+                  <svg class="w-12 h-12 mb-2 text-blue-400/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                  </svg>
+                  <span class="text-xs text-zinc-500">分类文件夹</span>
+                </div>
+
+                <!-- Action Dropdown / Buttons on Category Card -->
+                <div class="absolute top-2 right-2 flex items-center gap-1 z-10">
+                  <button 
+                    @click.stop="handleRenameCategory(cat)" 
+                    :title="t('editCategory')"
+                    class="p-1.5 bg-black/75 hover:bg-zinc-700 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow transition-all"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                  </button>
+                  <button 
+                    @click.stop="handleDeleteCategory(cat)" 
+                    :title="t('deleteCategory')"
+                    class="p-1.5 bg-black/75 hover:bg-red-600 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow transition-all"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="absolute bottom-2 left-2 px-2 py-0.5 bg-black/70 backdrop-blur rounded text-[10px] font-semibold text-blue-400">
+                  {{ t('itemCount', { count: (cat.items || []).length }) }}
+                </div>
+              </div>
+
+              <div class="p-3">
+                <h4 class="font-bold text-sm text-zinc-100 group-hover:text-blue-400 transition-colors truncate" :title="cat.name">
+                  {{ cat.name }}
+                </h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- D. 分类详情 (Category Detail) View -->
+        <div v-else-if="libraryViewMode === 'category_detail'">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <button 
+                @click="openCategoriesView" 
+                class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg transition-colors"
+                title="返回分类列表"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+              </button>
+              <h2 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
+                <span class="text-blue-400">📁</span>
+                <span>{{ currentCategory?.name }}</span>
+                <span class="text-xs bg-blue-950/60 text-blue-300 border border-blue-800/40 px-2 py-0.5 rounded-full">{{ (currentCategory?.items || []).length }}</span>
+              </h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <button 
+                @click="handleRenameCategory(currentCategory)" 
+                class="px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-semibold transition-colors"
+              >
+                {{ t('editCategory') }}
+              </button>
+              <button 
+                @click="handleDeleteCategory(currentCategory)" 
+                class="px-2.5 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/50 rounded-lg text-xs font-semibold transition-colors"
+              >
+                {{ t('deleteCategory') }}
+              </button>
+            </div>
+          </div>
+
+          <div v-if="(currentCategory?.items || []).length === 0" class="text-center py-20 border-2 border-dashed border-zinc-800 rounded-2xl p-8">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-blue-950/30 text-blue-400 flex items-center justify-center mb-4 text-2xl">
+              📁
+            </div>
+            <h3 class="text-base font-semibold text-zinc-200 mb-1">{{ currentCategory?.name }}</h3>
+            <p class="text-sm text-zinc-400 max-w-sm mx-auto mb-5">{{ t('emptyCategoryDetail') }}</p>
+            <button @click="goHome" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30">
+              去浏览书架添加内容
+            </button>
+          </div>
+
+          <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div 
+              v-for="item in filteredCategoryItems" 
+              :key="item.id"
+              @click="item.type === 'folder' ? openFolder(item) : openComic(item)"
+              class="comic-card group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer flex flex-col transition-all duration-300 hover:border-zinc-700"
+            >
+              <div class="aspect-[3/4] bg-zinc-800 relative overflow-hidden flex items-center justify-center">
+                <img 
+                  v-if="item.cover_url" 
+                  :src="item.cover_url" 
+                  loading="lazy" 
+                  alt="" 
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                >
+                <div v-else class="text-zinc-600 flex flex-col items-center justify-center p-4">
+                  <span class="text-xs">{{ t('noCover') }}</span>
+                </div>
+
+                <!-- Remove from Category Button on Top Right -->
+                <div class="absolute top-2 right-2 z-10">
+                  <button 
+                    @click.stop="toggleComicCategory(currentCategory.id, item)" 
+                    title="从当前分类中移除"
+                    class="p-1.5 bg-black/75 hover:bg-red-600 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow transition-all"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Type Badge -->
+                <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
+                  {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
+                </div>
+              </div>
+
+              <div class="p-2.5">
+                <h4 class="font-medium text-xs text-zinc-100 group-hover:text-blue-400 transition-colors line-clamp-2 leading-relaxed" :title="item.title || item.name">
+                  {{ item.title || item.name }}
+                </h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- E. 书架首页 (Bookshelves Root) View -->
         <div v-else-if="isRoot">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
@@ -386,7 +802,7 @@
                   v-if="shelf.cover_url" 
                   :src="shelf.cover_url" 
                   alt="" 
-                  loading="lazy"
+                  loading="lazy" 
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 >
                 <div v-else class="text-zinc-600 flex flex-col items-center justify-center p-4 text-center">
@@ -409,7 +825,7 @@
           </div>
         </div>
 
-        <!-- Subdirectory Content (Folders + Comics) -->
+        <!-- F. 子目录内容 (Subdirectory Folders + Comics) -->
         <div v-else>
           
           <!-- Subfolders Section -->
@@ -520,6 +936,44 @@
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                     </svg>
                   </button>
+
+                  <!-- Floating Action Buttons on Card Bottom Left (❤️, 🕒, 📁) -->
+                  <div class="absolute bottom-2 left-2 flex items-center gap-1 z-10">
+                    <!-- Favorite Button -->
+                    <button 
+                      @click.stop="toggleFavorite(comic)" 
+                      :title="t('toggleFavoriteTitle')"
+                      :class="favoriteIdSet.has(comic.id) ? 'bg-rose-600 text-white' : 'bg-black/75 hover:bg-rose-600 text-zinc-300 hover:text-white'"
+                      class="p-1.5 backdrop-blur rounded-lg shadow-md transition-all active:scale-90"
+                    >
+                      <svg class="w-3.5 h-3.5" :fill="favoriteIdSet.has(comic.id) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                      </svg>
+                    </button>
+
+                    <!-- Read Later Button -->
+                    <button 
+                      @click.stop="toggleReadLater(comic)" 
+                      :title="t('toggleReadLaterTitle')"
+                      :class="readLaterIdSet.has(comic.id) ? 'bg-amber-600 text-white' : 'bg-black/75 hover:bg-amber-600 text-zinc-300 hover:text-white'"
+                      class="p-1.5 backdrop-blur rounded-lg shadow-md transition-all active:scale-90"
+                    >
+                      <svg class="w-3.5 h-3.5" :fill="readLaterIdSet.has(comic.id) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    </button>
+
+                    <!-- Add to Category Button -->
+                    <button 
+                      @click.stop="openCategorySelectModal(comic)" 
+                      :title="t('toggleCategoryTitle')"
+                      class="p-1.5 bg-black/75 hover:bg-blue-600 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow-md transition-all active:scale-90"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                      </svg>
+                    </button>
+                  </div>
 
                   <!-- Type Badge -->
                   <div class="absolute top-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
@@ -727,6 +1181,44 @@
               {{ readingDirection === 'rtl' ? 'RTL' : 'LTR' }}
             </button>
           </template>
+
+          <!-- Reader Quick Collection Actions (Favorite, Read Later, Category) -->
+          <div class="flex items-center gap-1 border-r border-zinc-800 pr-1 mr-0.5">
+            <!-- Favorite Button -->
+            <button 
+              @click="toggleFavorite(currentComic)" 
+              :class="isCurrentComicFavorite ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'text-zinc-400 hover:text-rose-400 hover:bg-zinc-800'"
+              class="p-1.5 rounded-lg transition-all flex items-center justify-center"
+              :title="t('toggleFavoriteTitle')"
+            >
+              <svg class="w-4 h-4" :fill="isCurrentComicFavorite ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+              </svg>
+            </button>
+
+            <!-- Read Later Button -->
+            <button 
+              @click="toggleReadLater(currentComic)" 
+              :class="isCurrentComicReadLater ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'text-zinc-400 hover:text-amber-400 hover:bg-zinc-800'"
+              class="p-1.5 rounded-lg transition-all flex items-center justify-center"
+              :title="t('toggleReadLaterTitle')"
+            >
+              <svg class="w-4 h-4" :fill="isCurrentComicReadLater ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </button>
+
+            <!-- Category Button -->
+            <button 
+              @click="openCategorySelectModal(currentComic)" 
+              class="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-zinc-800 rounded-lg transition-all flex items-center justify-center"
+              :title="t('toggleCategoryTitle')"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+              </svg>
+            </button>
+          </div>
 
           <!-- Fullscreen Toggle -->
           <button 
@@ -1496,7 +1988,140 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 6. 网页左下角快捷导航 (BACK, PARENT & HOME) -->
+    <!-- 6. 选择归档分类弹窗 (ADD TO CATEGORY MODAL) -->
+    <!-- ========================================== -->
+    <div v-if="showCategorySelectModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-5 shadow-2xl flex flex-col max-h-[85vh]">
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <h3 class="font-bold text-base text-zinc-100 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+            </svg>
+            <span>{{ t('modalAddToCategoryTitle') }}</span>
+          </h3>
+          <button @click="showCategorySelectModal = false" class="text-zinc-400 hover:text-white p-1 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Target Comic Info -->
+        <div class="py-3 flex items-center gap-3 border-b border-zinc-800/80 bg-zinc-950/40 px-3 -mx-5 my-2">
+          <div class="w-10 h-14 bg-zinc-800 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
+            <img v-if="targetComicForCategory?.cover_url" :src="targetComicForCategory.cover_url" class="w-full h-full object-cover">
+            <span v-else class="text-[10px] text-zinc-500">封面</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h4 class="font-bold text-xs text-zinc-200 truncate" :title="targetComicForCategory?.name || targetComicForCategory?.title">
+              {{ targetComicForCategory?.name || targetComicForCategory?.title }}
+            </h4>
+            <p class="text-[11px] text-zinc-500 truncate mt-0.5">选择分类进行归档（可跨书架多选）</p>
+          </div>
+        </div>
+
+        <!-- Categories List -->
+        <div class="py-3 space-y-2 overflow-y-auto flex-1 max-h-60">
+          <div v-if="categories.length === 0" class="text-center py-6 text-zinc-500 text-xs">
+            暂无分类，请在下方输入名称新建
+          </div>
+          <div 
+            v-for="cat in categories" 
+            :key="cat.id"
+            @click="toggleComicCategory(cat.id, targetComicForCategory)"
+            class="flex items-center justify-between p-3 bg-zinc-800/60 hover:bg-zinc-800 rounded-xl cursor-pointer transition-colors border"
+            :class="isComicInCategory(cat.id, targetComicForCategory?.id) ? 'border-blue-500/60 bg-blue-950/20 text-blue-300' : 'border-zinc-800 text-zinc-300'"
+          >
+            <div class="flex items-center gap-3">
+              <div 
+                class="w-5 h-5 rounded-md flex items-center justify-center transition-colors border"
+                :class="isComicInCategory(cat.id, targetComicForCategory?.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-zinc-600 bg-zinc-800'"
+              >
+                <svg v-if="isComicInCategory(cat.id, targetComicForCategory?.id)" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <span class="font-medium text-xs">{{ cat.name }}</span>
+            </div>
+            <span class="text-[11px] text-zinc-500 font-mono">{{ (cat.items || []).length }} 项</span>
+          </div>
+        </div>
+
+        <!-- Inline Quick Create Category Input -->
+        <div class="pt-3 border-t border-zinc-800 flex gap-2">
+          <input 
+            v-model="newCategoryNameInput" 
+            @keyup.enter="handleCreateCategory()" 
+            type="text" 
+            :placeholder="t('categoryNamePlaceholder')" 
+            class="flex-1 bg-zinc-800/90 border border-zinc-700 text-zinc-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+          <button 
+            @click="handleCreateCategory()" 
+            :disabled="!newCategoryNameInput.trim()"
+            :class="!newCategoryNameInput.trim() ? 'opacity-50 cursor-not-allowed bg-zinc-700' : 'bg-blue-600 hover:bg-blue-500'"
+            class="px-3 py-2 text-white rounded-xl text-xs font-bold transition-colors shrink-0"
+          >
+            {{ t('createCategory') }}
+          </button>
+        </div>
+
+        <div class="pt-3 border-t border-zinc-800 flex justify-end">
+          <button @click="showCategorySelectModal = false" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold">
+            {{ t('btnDone') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 7. 新建分类独立弹窗 (CREATE CATEGORY MODAL) -->
+    <!-- ========================================== -->
+    <div v-if="showCreateCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <h3 class="font-bold text-base text-zinc-100 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            <span>{{ t('createCategory') }}</span>
+          </h3>
+          <button @click="showCreateCategoryModal = false" class="text-zinc-400 hover:text-white p-1 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="py-4 space-y-3">
+          <label class="block text-xs font-semibold text-zinc-300">分类名称（如：日漫、韩漫、BL、插画等）</label>
+          <input 
+            v-model="newCategoryNameInput" 
+            @keyup.enter="handleCreateCategory()" 
+            type="text" 
+            :placeholder="t('categoryNamePlaceholder')" 
+            class="w-full bg-zinc-800/90 border border-zinc-700 text-zinc-200 text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+        </div>
+
+        <div class="pt-3 border-t border-zinc-800 flex justify-end gap-2">
+          <button @click="showCreateCategoryModal = false" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-semibold">
+            取消
+          </button>
+          <button 
+            @click="handleCreateCategory()" 
+            :disabled="!newCategoryNameInput.trim()"
+            :class="!newCategoryNameInput.trim() ? 'opacity-50 cursor-not-allowed bg-zinc-700' : 'bg-blue-600 hover:bg-blue-500'"
+            class="px-4 py-2 text-white rounded-xl text-xs font-bold transition-colors"
+          >
+            {{ t('createCategory') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 8. 网页左下角快捷导航 (BACK, PARENT & HOME) -->
     <!-- ========================================== -->
     <div 
       v-if="viewMode === 'library'"
@@ -1505,8 +2130,8 @@
       <!-- 1. 回到上一个访问的页面 -->
       <button 
         @click="goBack"
-        :disabled="isRoot && viewMode === 'library' && navHistory.length === 0"
-        :class="isRoot && viewMode === 'library' && navHistory.length === 0 ? 'opacity-40 cursor-not-allowed bg-zinc-900/60 text-zinc-500' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
+        :disabled="isRoot && viewMode === 'library' && navHistory.length === 0 && libraryViewMode === 'bookshelves'"
+        :class="(isRoot && viewMode === 'library' && navHistory.length === 0 && libraryViewMode === 'bookshelves') ? 'opacity-40 cursor-not-allowed bg-zinc-900/60 text-zinc-500' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
         class="flex items-center gap-1.5 px-3.5 py-2.5 backdrop-blur-md border border-zinc-700/80 shadow-2xl rounded-xl text-xs font-semibold transition-all"
         :title="t('btnBackTitle')"
       >
@@ -1520,8 +2145,8 @@
       <button 
         v-if="viewMode === 'library'"
         @click="goParent"
-        :disabled="isRoot"
-        :class="isRoot ? 'opacity-40 cursor-not-allowed bg-zinc-900/60 text-zinc-500' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
+        :disabled="isRoot || libraryViewMode !== 'bookshelves'"
+        :class="(isRoot || libraryViewMode !== 'bookshelves') ? 'opacity-40 cursor-not-allowed bg-zinc-900/60 text-zinc-500' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
         class="flex items-center gap-1.5 px-3.5 py-2.5 backdrop-blur-md border border-zinc-700/80 shadow-2xl rounded-xl text-xs font-semibold transition-all"
         :title="t('btnParentTitle')"
       >
@@ -1534,7 +2159,7 @@
       <!-- 3. 回到书架首页 -->
       <button 
         @click="goHome"
-        :class="(isRoot && viewMode === 'library' && !searchQuery) ? 'bg-zinc-900/70 text-zinc-400' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
+        :class="(isRoot && viewMode === 'library' && libraryViewMode === 'bookshelves' && !searchQuery) ? 'bg-zinc-900/70 text-zinc-400' : 'bg-zinc-900/90 hover:bg-zinc-800 hover:text-white active:scale-95 text-zinc-200'"
         class="flex items-center gap-1.5 px-3.5 py-2.5 backdrop-blur-md border border-zinc-700/80 shadow-2xl rounded-xl text-xs font-semibold transition-all"
         :title="t('btnHomeTitle')"
       >
@@ -1548,11 +2173,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.1.4"></script>
-  <script src="/static/js/touch.js?v=1.1.4"></script>
-  <script src="/static/js/modules/api.js?v=1.1.4"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.1.4"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.1.4"></script>
-  <script src="/static/js/app.js?v=1.1.4"></script>
+  <script src="/static/js/i18n.js?v=1.1.5"></script>
+  <script src="/static/js/touch.js?v=1.1.5"></script>
+  <script src="/static/js/modules/api.js?v=1.1.5"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.1.5"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.1.5"></script>
+  <script src="/static/js/app.js?v=1.1.5"></script>
 </body>
 </html>
