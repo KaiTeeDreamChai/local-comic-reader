@@ -27,9 +27,18 @@ createApp({
     const newCategoryNameInput = ref('');
     const showCreateCategoryModal = ref(false);
 
-    // Fast lookup sets for active status badges & buttons
+    // Fast lookup sets for active status badges, bookmarks & buttons
     const favoriteIdSet = computed(() => new Set(favorites.value.map(x => x.id)));
     const readLaterIdSet = computed(() => new Set(readLater.value.map(x => x.id)));
+    const categorizedIdSet = computed(() => {
+      const set = new Set();
+      (categories.value || []).forEach(cat => {
+        (cat.items || []).forEach(item => {
+          if (item && item.id) set.add(item.id);
+        });
+      });
+      return set;
+    });
 
     const isCurrentComicFavorite = computed(() => {
       return currentComic.value && favoriteIdSet.value.has(currentComic.value.id);
@@ -808,6 +817,7 @@ createApp({
       currentCategory,
       favoriteIdSet,
       readLaterIdSet,
+      categorizedIdSet,
       isCurrentComicFavorite,
       isCurrentComicReadLater,
       showCategorySelectModal,
