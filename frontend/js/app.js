@@ -345,8 +345,28 @@ createApp({
       }
     };
 
+    const scrollToAndHighlightItem = (targetId) => {
+      if (!targetId) return;
+      highlightedItemId.value = targetId;
+      const tryScroll = (attempts = 6) => {
+        nextTick(() => {
+          const el = document.getElementById(`item-${targetId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else if (attempts > 0) {
+            setTimeout(() => tryScroll(attempts - 1), 80);
+          }
+        });
+      };
+      tryScroll();
+      setTimeout(() => {
+        if (highlightedItemId.value === targetId) {
+          highlightedItemId.value = null;
+        }
+      }, 3500);
+    };
+
     const loadLibrary = async (encodedPath = '') => {
-      loading.value = true;
       loading.value = true;
       errorMsg.value = '';
       isSearchMode.value = false;
@@ -367,18 +387,7 @@ createApp({
         }
 
         if (highlightedItemId.value) {
-          nextTick(() => {
-            const targetId = highlightedItemId.value;
-            const el = document.getElementById(`item-${targetId}`);
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            setTimeout(() => {
-              if (highlightedItemId.value === targetId) {
-                highlightedItemId.value = null;
-              }
-            }, 3000);
-          });
+          scrollToAndHighlightItem(highlightedItemId.value);
         }
       } catch (e) {
         errorMsg.value = e.message || '加载目录出错';
@@ -399,6 +408,14 @@ createApp({
       if (crumb.is_collection) {
         return;
       }
+      const crumbIdx = breadcrumbs.value.findIndex(c => c.encoded_path === crumb.encoded_path);
+      if (crumbIdx >= 0 && crumbIdx < breadcrumbs.value.length - 1) {
+        const nextCrumb = breadcrumbs.value[crumbIdx + 1];
+        if (nextCrumb && nextCrumb.encoded_path) {
+          highlightedItemId.value = nextCrumb.encoded_path;
+        }
+      }
+
       pushNavHistory(currentPath.value ? btoa(unescape(encodeURIComponent(currentPath.value))) : '');
       searchQuery.value = '';
       isSearchMode.value = false;
@@ -495,13 +512,24 @@ createApp({
       comicReader.cleanupWebtoonObserver();
       comicReader.loadedPages.value.clear();
 
-      // Immediately cancel all pending image downloads in the browser connection pool
+      const lastComicId = currentComic.value?.id;
+      // Stop video playback and clear resources
       try {
+        const videoEl = document.getElementById('main-video-player');
+        if (videoEl) {
+          videoEl.pause();
+          videoEl.removeAttribute('src');
+          videoEl.load();
+        }
         window.stop();
       } catch (e) {}
 
       viewMode.value = 'library';
       currentComic.value = null;
+
+      if (lastComicId) {
+        scrollToAndHighlightItem(lastComicId);
+      }
     };
 
     const seekVideo = (seconds) => {
@@ -528,7 +556,11 @@ createApp({
         return;
       }
       if (libraryViewMode.value === 'category_detail') {
+        const catId = currentCategory.value?.id;
         openCategoriesView();
+        if (catId) {
+          scrollToAndHighlightItem(catId);
+        }
         return;
       }
       if (libraryViewMode.value === 'favorites' || libraryViewMode.value === 'read_later' || libraryViewMode.value === 'categories') {
@@ -537,6 +569,10 @@ createApp({
       }
       if (navHistory.value.length > 0) {
         const last = navHistory.value.pop();
+        const childFolderId = currentDirectory.value ? (currentDirectory.value.encoded_path || '') : '';
+        if (childFolderId) {
+          highlightedItemId.value = childFolderId;
+        }
         loadLibrary(last);
       } else if (!isRoot.value) {
         goParent();
@@ -545,6 +581,10 @@ createApp({
 
     const goParent = () => {
       if (isRoot.value) return;
+      const childFolderId = currentDirectory.value ? (currentDirectory.value.encoded_path || '') : '';
+      if (childFolderId) {
+        highlightedItemId.value = childFolderId;
+      }
       if (breadcrumbs.value.length >= 2) {
         const parentCrumb = breadcrumbs.value[breadcrumbs.value.length - 2];
         loadLibrary(parentCrumb.encoded_path);

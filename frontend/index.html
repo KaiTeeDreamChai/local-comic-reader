@@ -467,6 +467,7 @@
             <div 
               v-for="item in filteredFavorites" 
               :key="item.id"
+              :id="'item-' + item.id"
               @click="item.type === 'folder' ? openFolder(item) : openComic(item)"
               class="comic-card group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer flex flex-col transition-all duration-300 hover:border-zinc-700"
             >
@@ -487,31 +488,31 @@
                   {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
                 </div>
 
-                <!-- Unified Bottom Info & Action Bar -->
-                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-4 pb-1.5 px-2 flex items-center justify-between gap-1.5 z-10">
-                  <!-- Left: Page Count / Status Indicator -->
-                  <div class="flex items-center gap-1 text-[11px] font-semibold text-zinc-300 drop-shadow truncate">
-                    <span v-if="item.page_count && item.type !== 'video' && item.type !== 'book'">{{ item.page_count }}P</span>
-                    <span v-else-if="item.type === 'video'" class="text-indigo-400">视频</span>
-                    <span v-else-if="item.type === 'book'" class="text-emerald-400">电子书</span>
-                  </div>
+                <!-- Page Count Badge Bottom Right -->
+                <div v-if="item.page_count && item.type !== 'video' && item.type !== 'book'" class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/75 backdrop-blur rounded text-[10px] font-medium text-zinc-300 z-10">
+                  {{ item.page_count }}P
+                </div>
+              </div>
 
-                  <!-- Right: Unified Larger Action Button -->
+              <!-- Solid Black Card Footer -->
+              <div class="p-2.5 flex flex-col justify-between flex-1 bg-zinc-900 gap-2">
+                <h4 class="font-medium text-xs text-zinc-100 group-hover:text-rose-400 transition-colors line-clamp-2 leading-relaxed" :title="item.title || item.name">
+                  {{ item.title || item.name }}
+                </h4>
+
+                <div class="flex items-center justify-between pt-1.5 border-t border-zinc-800/80 mt-auto">
+                  <span class="text-[10px] text-zinc-500 font-mono">
+                    {{ item.type === 'video' ? '视频' : (item.type === 'book' ? '电子书' : (item.page_count ? (item.page_count + 'P') : '')) }}
+                  </span>
                   <button 
                     @click.stop="openCategorySelectModal(item)" 
-                    class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white backdrop-blur shadow transition-all active:scale-95 shrink-0 select-none"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600/20 text-rose-300 border border-rose-500/50 hover:bg-rose-600/30 transition-all active:scale-95 select-none"
                     title="收藏与分类管理"
                   >
                     <span>❤️</span>
                     <span>{{ t('navFavorites') }}</span>
                   </button>
                 </div>
-              </div>
-
-              <div class="p-2.5">
-                <h4 class="font-medium text-xs text-zinc-100 group-hover:text-rose-400 transition-colors line-clamp-2 leading-relaxed" :title="item.title || item.name">
-                  {{ item.title || item.name }}
-                </h4>
               </div>
             </div>
           </div>
@@ -539,6 +540,7 @@
             <div 
               v-for="item in filteredReadLater" 
               :key="item.id"
+              :id="'item-' + item.id"
               @click="item.type === 'folder' ? openFolder(item) : openComic(item)"
               class="comic-card group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer flex flex-col transition-all duration-300 hover:border-zinc-700"
             >
@@ -559,31 +561,31 @@
                   {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
                 </div>
 
-                <!-- Unified Bottom Info & Action Bar -->
-                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-4 pb-1.5 px-2 flex items-center justify-between gap-1.5 z-10">
-                  <!-- Left: Page Count / Status Indicator -->
-                  <div class="flex items-center gap-1 text-[11px] font-semibold text-zinc-300 drop-shadow truncate">
-                    <span v-if="item.page_count && item.type !== 'video' && item.type !== 'book'">{{ item.page_count }}P</span>
-                    <span v-else-if="item.type === 'video'" class="text-indigo-400">视频</span>
-                    <span v-else-if="item.type === 'book'" class="text-emerald-400">电子书</span>
-                  </div>
+                <!-- Page Count Badge Bottom Right -->
+                <div v-if="item.page_count && item.type !== 'video' && item.type !== 'book'" class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/75 backdrop-blur rounded text-[10px] font-medium text-zinc-300 z-10">
+                  {{ item.page_count }}P
+                </div>
+              </div>
 
-                  <!-- Right: Unified Larger Action Button -->
+              <!-- Solid Black Card Footer -->
+              <div class="p-2.5 flex flex-col justify-between flex-1 bg-zinc-900 gap-2">
+                <h4 class="font-medium text-xs text-zinc-100 group-hover:text-amber-400 transition-colors line-clamp-2 leading-relaxed" :title="item.title || item.name">
+                  {{ item.title || item.name }}
+                </h4>
+
+                <div class="flex items-center justify-between pt-1.5 border-t border-zinc-800/80 mt-auto">
+                  <span class="text-[10px] text-zinc-500 font-mono">
+                    {{ item.type === 'video' ? '视频' : (item.type === 'book' ? '电子书' : (item.page_count ? (item.page_count + 'P') : '')) }}
+                  </span>
                   <button 
                     @click.stop="openCategorySelectModal(item)" 
-                    class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white backdrop-blur shadow transition-all active:scale-95 shrink-0 select-none"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600/20 text-amber-300 border border-amber-500/50 hover:bg-amber-600/30 transition-all active:scale-95 select-none"
                     title="收藏与分类管理"
                   >
                     <span>🕒</span>
                     <span>{{ t('navReadLater') }}</span>
                   </button>
                 </div>
-              </div>
-
-              <div class="p-2.5">
-                <h4 class="font-medium text-xs text-zinc-100 group-hover:text-amber-400 transition-colors line-clamp-2 leading-relaxed" :title="item.title || item.name">
-                  {{ item.title || item.name }}
-                </h4>
               </div>
             </div>
           </div>
@@ -747,31 +749,32 @@
                   {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
                 </div>
 
-                <!-- Unified Bottom Info & Action Bar -->
-                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-4 pb-1.5 px-2 flex items-center justify-between gap-1.5 z-10">
-                  <!-- Left: Page Count / Status Indicator -->
-                  <div class="flex items-center gap-1 text-[11px] font-semibold text-zinc-300 drop-shadow truncate">
-                    <span v-if="item.page_count && item.type !== 'video' && item.type !== 'book'">{{ item.page_count }}P</span>
-                    <span v-else-if="item.type === 'video'" class="text-indigo-400">视频</span>
-                    <span v-else-if="item.type === 'book'" class="text-emerald-400">电子书</span>
-                  </div>
+                <!-- Page Count Badge Bottom Right -->
+                <div v-if="item.page_count && item.type !== 'video' && item.type !== 'book'" class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/75 backdrop-blur rounded text-[10px] font-medium text-zinc-300 z-10">
+                  {{ item.page_count }}P
+                </div>
+              </div>
 
-                  <!-- Right: Unified Larger Action Button -->
+              <!-- Solid Black Card Footer -->
+              <div class="p-2.5 flex flex-col justify-between flex-1 bg-zinc-900 gap-2">
+                <h4 class="font-medium text-xs text-zinc-100 group-hover:text-blue-400 transition-colors line-clamp-2 leading-relaxed" :title="item.title || item.name">
+                  {{ item.title || item.name }}
+                </h4>
+
+                <div class="flex items-center justify-between pt-1.5 border-t border-zinc-800/80 mt-auto">
+                  <span class="text-[10px] text-zinc-500 font-mono">
+                    {{ item.type === 'video' ? '视频' : (item.type === 'book' ? '电子书' : (item.page_count ? (item.page_count + 'P') : '')) }}
+                  </span>
                   <button 
                     @click.stop="openCategorySelectModal(item)" 
-                    class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white backdrop-blur shadow transition-all active:scale-95 shrink-0 select-none"
+                    :class="(favoriteIdSet.has(item.id) || readLaterIdSet.has(item.id)) ? 'bg-blue-600/25 text-blue-300 border-blue-500/50 hover:bg-blue-600/30' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border-zinc-700'"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border shadow-sm transition-all active:scale-95 select-none"
                     title="收藏与分类管理"
                   >
                     <span>📁</span>
                     <span>收藏/分类</span>
                   </button>
                 </div>
-              </div>
-
-              <div class="p-2.5">
-                <h4 class="font-medium text-xs text-zinc-100 group-hover:text-blue-400 transition-colors line-clamp-2 leading-relaxed" :title="item.title || item.name">
-                  {{ item.title || item.name }}
-                </h4>
               </div>
             </div>
           </div>
@@ -803,8 +806,10 @@
             <div 
               v-for="shelf in bookshelves" 
               :key="shelf.id"
+              :id="'item-' + (shelf.encoded_path || shelf.id)"
               @click="loadLibrary(shelf.encoded_path)"
-              class="comic-card group relative bg-zinc-900 border border-zinc-800/80 rounded-xl overflow-hidden cursor-pointer flex flex-col"
+              :class="{ 'ring-4 ring-blue-500 shadow-blue-500/50 shadow-xl scale-[1.03] animate-pulse': highlightedItemId === (shelf.encoded_path || shelf.id) }"
+              class="comic-card group relative bg-zinc-900 border border-zinc-800/80 rounded-xl overflow-hidden cursor-pointer flex flex-col transition-all duration-300"
             >
               <div class="aspect-[3/4] bg-zinc-800/50 relative overflow-hidden flex items-center justify-center">
                 <img 
@@ -951,36 +956,38 @@
                     {{ comic.type === 'book' ? (comic.ext ? comic.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (comic.type === 'video' ? t('videoBadge') : (comic.type === 'pdf' ? 'PDF' : (comic.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
                   </div>
 
-                  <!-- Unified Bottom Info & Action Bar (Page count on left, Large Action Button on right) -->
-                  <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-4 pb-1.5 px-2 flex items-center justify-between gap-1.5 z-10">
-                    <!-- Left: Page Count / Status Indicator -->
-                    <div class="flex items-center gap-1 text-[11px] font-semibold text-zinc-300 drop-shadow truncate">
-                      <span v-if="comic.page_count && comic.type !== 'video' && comic.type !== 'book'">{{ comic.page_count }}P</span>
-                      <span v-else-if="comic.type === 'video'" class="text-indigo-400">视频</span>
-                      <span v-else-if="comic.type === 'book'" class="text-emerald-400">电子书</span>
-                    </div>
+                  <!-- Page Count Badge Bottom Right on Cover (e.g. 11P) -->
+                  <div v-if="comic.page_count && comic.type !== 'video' && comic.type !== 'book'" class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/75 backdrop-blur rounded text-[10px] font-medium text-zinc-300 z-10">
+                    {{ comic.page_count }}P
+                  </div>
+                </div>
 
-                    <!-- Right: Unified Larger Action Button -->
+                <!-- Solid Black Card Footer (where title e.g. "第1话" is displayed) -->
+                <div class="p-2.5 flex flex-col justify-between flex-1 bg-zinc-900 gap-2">
+                  <h4 class="font-medium text-xs text-zinc-100 group-hover:text-blue-400 transition-colors line-clamp-2 leading-relaxed" :title="comic.name">
+                    {{ comic.name }}
+                  </h4>
+
+                  <div class="flex items-center justify-between pt-1.5 border-t border-zinc-800/80 mt-auto">
+                    <span class="text-[10px] text-zinc-500 font-mono">
+                      {{ comic.type === 'video' ? '视频' : (comic.type === 'book' ? '电子书' : (comic.page_count ? (comic.page_count + 'P') : '')) }}
+                    </span>
+
+                    <!-- Larger, prominent button in the solid black footer -->
                     <button 
                       @click.stop="openCategorySelectModal(comic)" 
-                      :class="(favoriteIdSet.has(comic.id) || readLaterIdSet.has(comic.id)) ? 'bg-amber-500/90 hover:bg-amber-500 text-white shadow-amber-500/20' : 'bg-zinc-800/90 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-zinc-700/60'"
-                      class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold backdrop-blur shadow transition-all active:scale-95 shrink-0 select-none"
+                      :class="(favoriteIdSet.has(comic.id) || readLaterIdSet.has(comic.id)) ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30' : 'bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-white border-zinc-700'"
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border shadow-sm transition-all active:scale-95 select-none"
                       title="收藏、稍后再看与分类归档"
                     >
-                      <span v-if="favoriteIdSet.has(comic.id)" class="text-rose-200">❤️</span>
-                      <span v-else-if="readLaterIdSet.has(comic.id)" class="text-amber-200">🕒</span>
+                      <span v-if="favoriteIdSet.has(comic.id)" class="text-rose-400">❤️</span>
+                      <span v-else-if="readLaterIdSet.has(comic.id)" class="text-amber-400">🕒</span>
                       <svg v-else class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
                       </svg>
                       <span>{{ favoriteIdSet.has(comic.id) ? t('navFavorites') : (readLaterIdSet.has(comic.id) ? t('navReadLater') : '收藏/分类') }}</span>
                     </button>
                   </div>
-                </div>
-
-                <div class="p-2.5">
-                  <h4 class="font-medium text-xs text-zinc-100 group-hover:text-blue-400 transition-colors line-clamp-2 leading-relaxed" :title="comic.name">
-                    {{ comic.name }}
-                  </h4>
                 </div>
               </div>
             </div>
@@ -2202,11 +2209,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.1.7"></script>
-  <script src="/static/js/touch.js?v=1.1.7"></script>
-  <script src="/static/js/modules/api.js?v=1.1.7"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.1.7"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.1.7"></script>
-  <script src="/static/js/app.js?v=1.1.7"></script>
+  <script src="/static/js/i18n.js?v=1.1.8"></script>
+  <script src="/static/js/touch.js?v=1.1.8"></script>
+  <script src="/static/js/modules/api.js?v=1.1.8"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.1.8"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.1.8"></script>
+  <script src="/static/js/app.js?v=1.1.8"></script>
 </body>
 </html>
