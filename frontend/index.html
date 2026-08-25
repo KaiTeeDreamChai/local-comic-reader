@@ -439,7 +439,13 @@
             <button @click="goBack" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-sm font-medium transition-colors">
               {{ t('backToLast') }}
             </button>
-            <button @click="goHome" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg        <!-- A. 收藏 (Favorites) View -->
+            <button @click="goHome" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30 transition-colors">
+              {{ t('backToHome') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- A. 收藏 (Favorites) View -->
         <div v-else-if="libraryViewMode === 'favorites'">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
@@ -1037,7 +1043,7 @@
               <template v-if="currentComic?.type === 'book'">
                 <span class="text-emerald-400 font-semibold">{{ t('chapterIndicator', { current: novelChapterIndex + 1, total: currentComic?.total_chapters }) }}</span>
                 <span class="text-zinc-600">•</span>
-                <span class="truncate max-w-[150px]">{{ currentComic?.chapters[novelChapterIndex]?.title }}</span>
+                <span class="truncate max-w-[150px]">{{ currentComic?.chapters?.[novelChapterIndex]?.title }}</span>
               </template>
               <template v-else-if="currentComic?.type !== 'video'">
                 <span v-if="!isDoublePage">{{ t('pageIndicator', { current: currentPageIndex + 1, total: currentComic?.total_pages }) }}</span>
@@ -1237,7 +1243,7 @@
           <!-- Download / Export File in Reader -->
           <button 
             @click="downloadComic(currentComic)" 
-            :title="t('downloadCurrent', { title: currentComic?.title })"
+            :title="t('downloadCurrent', { title: currentComic?.title || currentComic?.name || '' })"
             class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
           >
             <svg v-if="!downloadingComics.has(currentComic?.id)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1328,13 +1334,13 @@
           <div class="novel-content-container" :style="{ fontSize: `${novelFontSize}px` }">
             <!-- Chapter Title -->
             <h1 class="novel-chapter-title text-2xl md:text-3xl text-center">
-              {{ currentComic?.chapters[novelChapterIndex]?.title }}
+              {{ currentComic?.chapters?.[novelChapterIndex]?.title }}
             </h1>
 
             <!-- Chapter Content Paragraphs -->
             <div class="space-y-4">
               <p 
-                v-for="(para, pIdx) in currentComic?.chapters[novelChapterIndex]?.paragraphs" 
+                v-for="(para, pIdx) in (currentComic?.chapters?.[novelChapterIndex]?.paragraphs || [])" 
                 :key="pIdx" 
                 class="novel-paragraph"
               >
@@ -2173,11 +2179,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.1.5"></script>
-  <script src="/static/js/touch.js?v=1.1.5"></script>
-  <script src="/static/js/modules/api.js?v=1.1.5"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.1.5"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.1.5"></script>
-  <script src="/static/js/app.js?v=1.1.5"></script>
+  <script src="/static/js/i18n.js?v=1.1.6"></script>
+  <script src="/static/js/touch.js?v=1.1.6"></script>
+  <script src="/static/js/modules/api.js?v=1.1.6"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.1.6"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.1.6"></script>
+  <script src="/static/js/app.js?v=1.1.6"></script>
 </body>
 </html>
