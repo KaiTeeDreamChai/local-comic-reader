@@ -482,31 +482,29 @@
                   <span class="text-xs">{{ t('noCover') }}</span>
                 </div>
 
-                <!-- Floating Quick Actions on Card Top -->
-                <div class="absolute top-2 right-2 flex items-center gap-1 z-10">
-                  <button 
-                    @click.stop="toggleFavorite(item)" 
-                    title="取消收藏"
-                    class="p-1.5 bg-black/75 hover:bg-rose-600 text-rose-400 hover:text-white backdrop-blur rounded-lg shadow transition-all"
-                  >
-                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                    </svg>
-                  </button>
-                  <button 
-                    @click.stop="openCategorySelectModal(item)" 
-                    :title="t('addToCategory')"
-                    class="p-1.5 bg-black/75 hover:bg-blue-600 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow transition-all"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
-                    </svg>
-                  </button>
+                <!-- Type Badge Top Left -->
+                <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300 z-10">
+                  {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
                 </div>
 
-                <!-- Type Badge -->
-                <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
-                  {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
+                <!-- Unified Bottom Info & Action Bar -->
+                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-4 pb-1.5 px-2 flex items-center justify-between gap-1.5 z-10">
+                  <!-- Left: Page Count / Status Indicator -->
+                  <div class="flex items-center gap-1 text-[11px] font-semibold text-zinc-300 drop-shadow truncate">
+                    <span v-if="item.page_count && item.type !== 'video' && item.type !== 'book'">{{ item.page_count }}P</span>
+                    <span v-else-if="item.type === 'video'" class="text-indigo-400">视频</span>
+                    <span v-else-if="item.type === 'book'" class="text-emerald-400">电子书</span>
+                  </div>
+
+                  <!-- Right: Unified Larger Action Button -->
+                  <button 
+                    @click.stop="openCategorySelectModal(item)" 
+                    class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white backdrop-blur shadow transition-all active:scale-95 shrink-0 select-none"
+                    title="收藏与分类管理"
+                  >
+                    <span>❤️</span>
+                    <span>{{ t('navFavorites') }}</span>
+                  </button>
                 </div>
               </div>
 
@@ -556,31 +554,29 @@
                   <span class="text-xs">{{ t('noCover') }}</span>
                 </div>
 
-                <!-- Floating Quick Actions on Card Top -->
-                <div class="absolute top-2 right-2 flex items-center gap-1 z-10">
-                  <button 
-                    @click.stop="toggleReadLater(item)" 
-                    title="从稍后再看中移除"
-                    class="p-1.5 bg-black/75 hover:bg-amber-600 text-amber-400 hover:text-white backdrop-blur rounded-lg shadow transition-all"
-                  >
-                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                  </button>
-                  <button 
-                    @click.stop="openCategorySelectModal(item)" 
-                    :title="t('addToCategory')"
-                    class="p-1.5 bg-black/75 hover:bg-blue-600 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow transition-all"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
-                    </svg>
-                  </button>
+                <!-- Type Badge Top Left -->
+                <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300 z-10">
+                  {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
                 </div>
 
-                <!-- Type Badge -->
-                <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
-                  {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
+                <!-- Unified Bottom Info & Action Bar -->
+                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-4 pb-1.5 px-2 flex items-center justify-between gap-1.5 z-10">
+                  <!-- Left: Page Count / Status Indicator -->
+                  <div class="flex items-center gap-1 text-[11px] font-semibold text-zinc-300 drop-shadow truncate">
+                    <span v-if="item.page_count && item.type !== 'video' && item.type !== 'book'">{{ item.page_count }}P</span>
+                    <span v-else-if="item.type === 'video'" class="text-indigo-400">视频</span>
+                    <span v-else-if="item.type === 'book'" class="text-emerald-400">电子书</span>
+                  </div>
+
+                  <!-- Right: Unified Larger Action Button -->
+                  <button 
+                    @click.stop="openCategorySelectModal(item)" 
+                    class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white backdrop-blur shadow transition-all active:scale-95 shrink-0 select-none"
+                    title="收藏与分类管理"
+                  >
+                    <span>🕒</span>
+                    <span>{{ t('navReadLater') }}</span>
+                  </button>
                 </div>
               </div>
 
@@ -746,22 +742,29 @@
                   <span class="text-xs">{{ t('noCover') }}</span>
                 </div>
 
-                <!-- Remove from Category Button on Top Right -->
-                <div class="absolute top-2 right-2 z-10">
-                  <button 
-                    @click.stop="toggleComicCategory(currentCategory.id, item)" 
-                    title="从当前分类中移除"
-                    class="p-1.5 bg-black/75 hover:bg-red-600 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow transition-all"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                  </button>
+                <!-- Type Badge Top Left -->
+                <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300 z-10">
+                  {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
                 </div>
 
-                <!-- Type Badge -->
-                <div class="absolute top-2 left-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
-                  {{ item.type === 'book' ? (item.ext ? item.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (item.type === 'video' ? t('videoBadge') : (item.type === 'pdf' ? 'PDF' : (item.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
+                <!-- Unified Bottom Info & Action Bar -->
+                <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-4 pb-1.5 px-2 flex items-center justify-between gap-1.5 z-10">
+                  <!-- Left: Page Count / Status Indicator -->
+                  <div class="flex items-center gap-1 text-[11px] font-semibold text-zinc-300 drop-shadow truncate">
+                    <span v-if="item.page_count && item.type !== 'video' && item.type !== 'book'">{{ item.page_count }}P</span>
+                    <span v-else-if="item.type === 'video'" class="text-indigo-400">视频</span>
+                    <span v-else-if="item.type === 'book'" class="text-emerald-400">电子书</span>
+                  </div>
+
+                  <!-- Right: Unified Larger Action Button -->
+                  <button 
+                    @click.stop="openCategorySelectModal(item)" 
+                    class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white backdrop-blur shadow transition-all active:scale-95 shrink-0 select-none"
+                    title="收藏与分类管理"
+                  >
+                    <span>📁</span>
+                    <span>收藏/分类</span>
+                  </button>
                 </div>
               </div>
 
@@ -943,52 +946,34 @@
                     </svg>
                   </button>
 
-                  <!-- Floating Action Buttons on Card Bottom Left (❤️, 🕒, 📁) -->
-                  <div class="absolute bottom-2 left-2 flex items-center gap-1 z-10">
-                    <!-- Favorite Button -->
-                    <button 
-                      @click.stop="toggleFavorite(comic)" 
-                      :title="t('toggleFavoriteTitle')"
-                      :class="favoriteIdSet.has(comic.id) ? 'bg-rose-600 text-white' : 'bg-black/75 hover:bg-rose-600 text-zinc-300 hover:text-white'"
-                      class="p-1.5 backdrop-blur rounded-lg shadow-md transition-all active:scale-90"
-                    >
-                      <svg class="w-3.5 h-3.5" :fill="favoriteIdSet.has(comic.id) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                      </svg>
-                    </button>
-
-                    <!-- Read Later Button -->
-                    <button 
-                      @click.stop="toggleReadLater(comic)" 
-                      :title="t('toggleReadLaterTitle')"
-                      :class="readLaterIdSet.has(comic.id) ? 'bg-amber-600 text-white' : 'bg-black/75 hover:bg-amber-600 text-zinc-300 hover:text-white'"
-                      class="p-1.5 backdrop-blur rounded-lg shadow-md transition-all active:scale-90"
-                    >
-                      <svg class="w-3.5 h-3.5" :fill="readLaterIdSet.has(comic.id) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      </svg>
-                    </button>
-
-                    <!-- Add to Category Button -->
-                    <button 
-                      @click.stop="openCategorySelectModal(comic)" 
-                      :title="t('toggleCategoryTitle')"
-                      class="p-1.5 bg-black/75 hover:bg-blue-600 text-zinc-300 hover:text-white backdrop-blur rounded-lg shadow-md transition-all active:scale-90"
-                    >
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
-                      </svg>
-                    </button>
-                  </div>
-
-                  <!-- Type Badge -->
-                  <div class="absolute top-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300">
+                  <!-- Type Badge Top Right -->
+                  <div class="absolute top-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[9px] font-bold uppercase text-zinc-300 z-10">
                     {{ comic.type === 'book' ? (comic.ext ? comic.ext.replace('.', '').toUpperCase() : t('bookBadge')) : (comic.type === 'video' ? t('videoBadge') : (comic.type === 'pdf' ? 'PDF' : (comic.type === 'archive' ? 'ZIP' : t('folderTypeBadge')))) }}
                   </div>
 
-                  <!-- Page Count / Chapters Badge -->
-                  <div v-if="comic.page_count && comic.type !== 'video' && comic.type !== 'book'" class="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur rounded text-[10px] font-medium text-zinc-300">
-                    {{ comic.page_count }}P
+                  <!-- Unified Bottom Info & Action Bar (Page count on left, Large Action Button on right) -->
+                  <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-4 pb-1.5 px-2 flex items-center justify-between gap-1.5 z-10">
+                    <!-- Left: Page Count / Status Indicator -->
+                    <div class="flex items-center gap-1 text-[11px] font-semibold text-zinc-300 drop-shadow truncate">
+                      <span v-if="comic.page_count && comic.type !== 'video' && comic.type !== 'book'">{{ comic.page_count }}P</span>
+                      <span v-else-if="comic.type === 'video'" class="text-indigo-400">视频</span>
+                      <span v-else-if="comic.type === 'book'" class="text-emerald-400">电子书</span>
+                    </div>
+
+                    <!-- Right: Unified Larger Action Button -->
+                    <button 
+                      @click.stop="openCategorySelectModal(comic)" 
+                      :class="(favoriteIdSet.has(comic.id) || readLaterIdSet.has(comic.id)) ? 'bg-amber-500/90 hover:bg-amber-500 text-white shadow-amber-500/20' : 'bg-zinc-800/90 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-zinc-700/60'"
+                      class="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold backdrop-blur shadow transition-all active:scale-95 shrink-0 select-none"
+                      title="收藏、稍后再看与分类归档"
+                    >
+                      <span v-if="favoriteIdSet.has(comic.id)" class="text-rose-200">❤️</span>
+                      <span v-else-if="readLaterIdSet.has(comic.id)" class="text-amber-200">🕒</span>
+                      <svg v-else class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                      </svg>
+                      <span>{{ favoriteIdSet.has(comic.id) ? t('navFavorites') : (readLaterIdSet.has(comic.id) ? t('navReadLater') : '收藏/分类') }}</span>
+                    </button>
                   </div>
                 </div>
 
@@ -2022,12 +2007,50 @@
             <h4 class="font-bold text-xs text-zinc-200 truncate" :title="targetComicForCategory?.name || targetComicForCategory?.title">
               {{ targetComicForCategory?.name || targetComicForCategory?.title }}
             </h4>
-            <p class="text-[11px] text-zinc-500 truncate mt-0.5">选择分类进行归档（可跨书架多选）</p>
+            <p class="text-[11px] text-zinc-500 truncate mt-0.5">收藏、稍后再看与分类归档</p>
           </div>
         </div>
 
+        <!-- 1. Quick Action Toggles (❤️ 默认收藏 & 🕒 稍后再看) -->
+        <div class="grid grid-cols-2 gap-2 my-2">
+          <!-- Toggle Favorite -->
+          <button 
+            @click="toggleFavorite(targetComicForCategory)"
+            :class="favoriteIdSet.has(targetComicForCategory?.id) ? 'bg-rose-600/25 border-rose-500/60 text-rose-300 shadow-sm shadow-rose-900/30' : 'bg-zinc-800/80 hover:bg-zinc-800 border-zinc-700/80 text-zinc-300 hover:text-white'"
+            class="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 select-none"
+          >
+            <svg class="w-4 h-4" :fill="favoriteIdSet.has(targetComicForCategory?.id) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+            <span>{{ favoriteIdSet.has(targetComicForCategory?.id) ? '❤️ 已加入收藏' : '🤍 加入收藏' }}</span>
+          </button>
+
+          <!-- Toggle Read Later -->
+          <button 
+            @click="toggleReadLater(targetComicForCategory)"
+            :class="readLaterIdSet.has(targetComicForCategory?.id) ? 'bg-amber-600/25 border-amber-500/60 text-amber-300 shadow-sm shadow-amber-900/30' : 'bg-zinc-800/80 hover:bg-zinc-800 border-zinc-700/80 text-zinc-300 hover:text-white'"
+            class="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 select-none"
+          >
+            <svg class="w-4 h-4" :fill="readLaterIdSet.has(targetComicForCategory?.id) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>{{ readLaterIdSet.has(targetComicForCategory?.id) ? '🕒 已加入稍后' : '🕒 稍后再看' }}</span>
+          </button>
+        </div>
+
+        <!-- 2. Section Header: Custom Categories -->
+        <div class="text-[11px] font-semibold text-zinc-400 mt-2 mb-1 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+            </svg>
+            <span>跨书架分类文件夹（可多选）</span>
+          </span>
+          <span class="text-zinc-500">{{ categories.length }} 个分类</span>
+        </div>
+
         <!-- Categories List -->
-        <div class="py-3 space-y-2 overflow-y-auto flex-1 max-h-60">
+        <div class="py-2 space-y-2 overflow-y-auto flex-1 max-h-56">
           <div v-if="categories.length === 0" class="text-center py-6 text-zinc-500 text-xs">
             暂无分类，请在下方输入名称新建
           </div>
@@ -2179,11 +2202,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.1.6"></script>
-  <script src="/static/js/touch.js?v=1.1.6"></script>
-  <script src="/static/js/modules/api.js?v=1.1.6"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.1.6"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.1.6"></script>
-  <script src="/static/js/app.js?v=1.1.6"></script>
+  <script src="/static/js/i18n.js?v=1.1.7"></script>
+  <script src="/static/js/touch.js?v=1.1.7"></script>
+  <script src="/static/js/modules/api.js?v=1.1.7"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.1.7"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.1.7"></script>
+  <script src="/static/js/app.js?v=1.1.7"></script>
 </body>
 </html>
