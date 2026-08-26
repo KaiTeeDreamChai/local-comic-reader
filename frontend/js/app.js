@@ -167,37 +167,130 @@ createApp({
       return false;
     };
 
-    // Filtered lists for search in library
+    // 7.5 Custom Sorting Engine (Name, Modification Time, Creation Time, File Size)
+    const sortBy = ref(localStorage.getItem('comic_sort_by') || 'name');
+    const sortOrder = ref(localStorage.getItem('comic_sort_order') || 'asc');
+    const showSortMenu = ref(false);
+
+    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+    const sortItems = (list, by = sortBy.value, order = sortOrder.value) => {
+      if (!list || !Array.isArray(list) || list.length === 0) return [];
+      const items = [...list];
+      const factor = order === 'desc' ? -1 : 1;
+
+      items.sort((a, b) => {
+        if (by === 'name') {
+          const nameA = (a.title || a.name || '').trim();
+          const nameB = (b.title || b.name || '').trim();
+          return factor * collator.compare(nameA, nameB);
+        } else if (by === 'mtime') {
+          const valA = a.mtime || 0;
+          const valB = b.mtime || 0;
+          if (valA !== valB) return factor * (valA - valB);
+          return collator.compare(a.title || a.name || '', b.title || b.name || '');
+        } else if (by === 'ctime') {
+          const valA = a.ctime || a.mtime || 0;
+          const valB = b.ctime || b.mtime || 0;
+          if (valA !== valB) return factor * (valA - valB);
+          return collator.compare(a.title || a.name || '', b.title || b.name || '');
+        } else if (by === 'size') {
+          const valA = a.size || 0;
+          const valB = b.size || 0;
+          if (valA !== valB) return factor * (valA - valB);
+          return collator.compare(a.title || a.name || '', b.title || b.name || '');
+        }
+        return 0;
+      });
+
+      return items;
+    };
+
+    const setSortBy = (by) => {
+      if (sortBy.value === by) {
+        sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortBy.value = by;
+        sortOrder.value = (by === 'mtime' || by === 'ctime' || by === 'size') ? 'desc' : 'asc';
+      }
+      localStorage.setItem('comic_sort_by', sortBy.value);
+      localStorage.setItem('comic_sort_order', sortOrder.value);
+    };
+
+    const setSortOrder = (order) => {
+      sortOrder.value = order;
+      localStorage.setItem('comic_sort_order', sortOrder.value);
+    };
+
+    const toggleSortOrder = () => {
+      sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+      localStorage.setItem('comic_sort_order', sortOrder.value);
+    };
+
+    const formatFileSize = (bytes) => {
+      if (!bytes || bytes <= 0) return '';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+    };
+
+    const formatDate = (timestamp) => {
+      if (!timestamp) return '';
+      const d = new Date(timestamp * 1000);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    // Filtered & Sorted lists for library views
+    const sortedBookshelves = computed(() => {
+      return sortItems(bookshelves.value, sortBy.value, sortOrder.value);
+    });
+
     const filteredFolders = computed(() => {
-      if (isSearchMode.value || !searchQuery.value.trim()) return currentDirectory.value.folders || [];
-      return (currentDirectory.value.folders || []).filter(f => fuzzyMatch(searchQuery.value, f.name));
+      const raw = isSearchMode.value || !searchQuery.value.trim()
+        ? (currentDirectory.value.folders || [])
+        : (currentDirectory.value.folders || []).filter(f => fuzzyMatch(searchQuery.value, f.name || f.title));
+      return sortItems(raw, sortBy.value, sortOrder.value);
     });
 
     const filteredComics = computed(() => {
-      if (isSearchMode.value || !searchQuery.value.trim()) return currentDirectory.value.comics || [];
-      return (currentDirectory.value.comics || []).filter(c => fuzzyMatch(searchQuery.value, c.name));
+      const raw = isSearchMode.value || !searchQuery.value.trim()
+        ? (currentDirectory.value.comics || [])
+        : (currentDirectory.value.comics || []).filter(c => fuzzyMatch(searchQuery.value, c.title || c.name));
+      return sortItems(raw, sortBy.value, sortOrder.value);
     });
 
     const filteredFavorites = computed(() => {
-      if (!searchQuery.value.trim()) return favorites.value;
-      return favorites.value.filter(item => fuzzyMatch(searchQuery.value, item.title || item.name));
+      const raw = !searchQuery.value.trim()
+        ? favorites.value
+        : favorites.value.filter(item => fuzzyMatch(searchQuery.value, item.title || item.name));
+      return sortItems(raw, sortBy.value, sortOrder.value);
     });
 
     const filteredReadLater = computed(() => {
-      if (!searchQuery.value.trim()) return readLater.value;
-      return readLater.value.filter(item => fuzzyMatch(searchQuery.value, item.title || item.name));
+      const raw = !searchQuery.value.trim()
+        ? readLater.value
+        : readLater.value.filter(item => fuzzyMatch(searchQuery.value, item.title || item.name));
+      return sortItems(raw, sortBy.value, sortOrder.value);
     });
 
     const filteredCategories = computed(() => {
-      if (!searchQuery.value.trim()) return categories.value;
-      return categories.value.filter(cat => fuzzyMatch(searchQuery.value, cat.name));
+      const raw = !searchQuery.value.trim()
+        ? categories.value
+        : categories.value.filter(cat => fuzzyMatch(searchQuery.value, cat.name));
+      return sortItems(raw, sortBy.value, sortOrder.value);
     });
 
     const filteredCategoryItems = computed(() => {
       if (!currentCategory.value) return [];
-      const items = currentCategory.value.items || [];
-      if (!searchQuery.value.trim()) return items;
-      return items.filter(item => fuzzyMatch(searchQuery.value, item.title || item.name));
+      const raw = currentCategory.value.items || [];
+      const filtered = !searchQuery.value.trim()
+        ? raw
+        : raw.filter(item => fuzzyMatch(searchQuery.value, item.title || item.name));
+      return sortItems(filtered, sortBy.value, sortOrder.value);
     });
 
     // Collections & Categories Handlers
@@ -913,11 +1006,16 @@ createApp({
     };
 
     // 15. Lifecycle Hooks
+    const onDocumentClick = () => {
+      showSortMenu.value = false;
+    };
+
     onMounted(async () => {
       comicReader.updateScreenOrientation();
       window.addEventListener('resize', comicReader.updateScreenOrientation);
       window.addEventListener('orientationchange', comicReader.updateScreenOrientation);
       window.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('click', onDocumentClick);
 
       try {
         const info = await window.API.getSystemInfo();
@@ -944,6 +1042,7 @@ createApp({
       window.removeEventListener('resize', comicReader.updateScreenOrientation);
       window.removeEventListener('orientationchange', comicReader.updateScreenOrientation);
       window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', onDocumentClick);
       if (touchController) {
         touchController.destroy();
       }
@@ -960,6 +1059,16 @@ createApp({
       showMobileMenu,
       highlightedItemId,
       performGlobalSearch,
+      // Sorting
+      sortBy,
+      sortOrder,
+      showSortMenu,
+      setSortBy,
+      setSortOrder,
+      toggleSortOrder,
+      formatFileSize,
+      formatDate,
+      sortedBookshelves,
       filteredFolders,
       filteredComics,
       filteredFavorites,

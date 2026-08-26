@@ -202,7 +202,21 @@ const i18n = {
     addToFav: '加入收藏',
     readLaterActive: '稍后再看',
     addToReadLater: '稍后再看',
-    manageCategory: '管理分类'
+    manageCategory: '管理分类',
+
+    // Sorting
+    sortBy: '排序规则',
+    sortByName: '按名称',
+    sortByMtime: '按修改时间',
+    sortByCtime: '按创建时间',
+    sortBySize: '按文件大小',
+    sortOrderAsc: '升序 (A ➔ Z / 旧 ➔ 新)',
+    sortOrderDesc: '降序 (Z ➔ A / 新 ➔ 旧)',
+    sortAscShort: '升序',
+    sortDescShort: '降序',
+    sortLabel: '排序',
+    defaultSortSetting: '默认排序规则',
+    defaultSortOrderSetting: '默认排序顺序'
   },
 
   en: {
@@ -393,7 +407,21 @@ const i18n = {
     addToFav: 'Favorite',
     readLaterActive: 'In Read Later',
     addToReadLater: 'Read Later',
-    manageCategory: 'Categories'
+    manageCategory: 'Categories',
+
+    // Sorting
+    sortBy: 'Sort Rule',
+    sortByName: 'By Name',
+    sortByMtime: 'By Modified Time',
+    sortByCtime: 'By Created Time',
+    sortBySize: 'By File Size',
+    sortOrderAsc: 'Ascending (A-Z / Old-New)',
+    sortOrderDesc: 'Descending (Z-A / New-Old)',
+    sortAscShort: 'Asc',
+    sortDescShort: 'Desc',
+    sortLabel: 'Sort',
+    defaultSortSetting: 'Default Sort Rule',
+    defaultSortOrderSetting: 'Default Sort Order'
   }
 };
 

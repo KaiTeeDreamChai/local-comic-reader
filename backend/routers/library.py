@@ -34,16 +34,27 @@ async def browse_library(path: Optional[str] = Query(None), encoded_path: Option
             shelf_list = []
             for shelf in config.get("bookshelves", []):
                 p = Path(shelf["path"])
+                try:
+                    stat = p.stat() if p.exists() else None
+                    mtime = int(stat.st_mtime) if stat else 0
+                    ctime = int(getattr(stat, "st_birthtime", stat.st_ctime)) if stat else 0
+                except Exception:
+                    mtime = 0
+                    ctime = 0
                 cover_target = LibraryScanner.find_first_cover_target(p) if p.exists() else None
                 cover_url = f"/api/comic/thumbnail?comic_id={encode_path(cover_target)}&page_index=0" if cover_target else None
                 shelf_list.append({
                     "id": shelf["id"],
                     "name": shelf["name"],
+                    "title": shelf["name"],
                     "path": shelf["path"],
                     "encoded_path": encode_path(shelf["path"]),
                     "exists": p.exists(),
                     "type": "bookshelf",
-                    "cover_url": cover_url
+                    "cover_url": cover_url,
+                    "mtime": mtime,
+                    "ctime": ctime,
+                    "size": 0
                 })
             return {
                 "is_root": True,
@@ -110,6 +121,16 @@ async def search_library(q: str = Query(...)):
                     if fuzzy_match(query, d):
                         full_path = Path(dirpath) / d
                         try:
+                            try:
+                                stat = full_path.stat()
+                                mtime = int(stat.st_mtime)
+                                ctime = int(getattr(stat, "st_birthtime", stat.st_ctime))
+                                size = 0
+                            except Exception:
+                                mtime = 0
+                                ctime = 0
+                                size = 0
+
                             has_images = LibraryScanner.is_comic_folder(full_path)
                             sub_dirs = [s for s in full_path.iterdir() if s.is_dir() and not s.name.startswith(".")] if full_path.exists() else []
                             if has_images and len(sub_dirs) == 0:
@@ -124,7 +145,10 @@ async def search_library(q: str = Query(...)):
                                     "ext": "album",
                                     "path": str(full_path),
                                     "page_count": page_count,
-                                    "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
+                                    "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0",
+                                    "mtime": mtime,
+                                    "ctime": ctime,
+                                    "size": size
                                 })
                             else:
                                 # Regular directory / series folder
@@ -133,19 +157,27 @@ async def search_library(q: str = Query(...)):
                                 folders.append({
                                     "id": encode_path(str(full_path)),
                                     "name": d,
+                                    "title": d,
                                     "path": str(full_path),
                                     "type": "directory",
                                     "has_images": has_images,
-                                    "cover_url": cover_url
+                                    "cover_url": cover_url,
+                                    "mtime": mtime,
+                                    "ctime": ctime,
+                                    "size": size
                                 })
                         except Exception:
                             folders.append({
                                 "id": encode_path(str(full_path)),
                                 "name": d,
+                                "title": d,
                                 "path": str(full_path),
                                 "type": "directory",
                                 "has_images": False,
-                                "cover_url": None
+                                "cover_url": None,
+                                "mtime": 0,
+                                "ctime": 0,
+                                "size": 0
                             })
                         if len(folders) + len(comics) >= max_results: break
                 
@@ -156,6 +188,15 @@ async def search_library(q: str = Query(...)):
                     if fuzzy_match(query, f):
                         ext = Path(f).suffix.lower()
                         full_path = Path(dirpath) / f
+                        try:
+                            stat = full_path.stat()
+                            mtime = int(stat.st_mtime)
+                            ctime = int(getattr(stat, "st_birthtime", stat.st_ctime))
+                            size = stat.st_size if full_path.is_file() else 0
+                        except Exception:
+                            mtime = 0
+                            ctime = 0
+                            size = 0
                         
                         if ext in VIDEO_EXTENSIONS:
                             comics.append({
@@ -166,7 +207,10 @@ async def search_library(q: str = Query(...)):
                                 "ext": ext,
                                 "path": str(full_path),
                                 "page_count": 1,
-                                "cover_url": None
+                                "cover_url": None,
+                                "mtime": mtime,
+                                "ctime": ctime,
+                                "size": size
                             })
                         elif ext in BOOK_EXTENSIONS:
                             comics.append({
@@ -177,7 +221,10 @@ async def search_library(q: str = Query(...)):
                                 "ext": ext,
                                 "path": str(full_path),
                                 "page_count": 1,
-                                "cover_url": None
+                                "cover_url": None,
+                                "mtime": mtime,
+                                "ctime": ctime,
+                                "size": size
                             })
                         elif ext in ARCHIVE_EXTENSIONS or ext in PDF_EXTENSIONS:
                             t = "pdf" if ext in PDF_EXTENSIONS else "archive"
@@ -189,7 +236,10 @@ async def search_library(q: str = Query(...)):
                                 "ext": ext,
                                 "path": str(full_path),
                                 "page_count": 0,
-                                "cover_url": None
+                                "cover_url": None,
+                                "mtime": mtime,
+                                "ctime": ctime,
+                                "size": size
                             })
                         
                         if len(folders) + len(comics) >= max_results: break

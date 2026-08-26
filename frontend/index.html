@@ -85,6 +85,87 @@
             </svg>
           </div>
 
+          <!-- Sort Selector Dropdown -->
+          <div class="relative">
+            <button 
+              @click.stop="showSortMenu = !showSortMenu" 
+              :title="t('sortBy')"
+              class="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 active:scale-95 border border-zinc-700/60 text-zinc-300 hover:text-white rounded-lg text-xs font-semibold shadow-sm transition-all select-none"
+            >
+              <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path>
+              </svg>
+              <span>{{ sortBy === 'name' ? t('sortByName') : (sortBy === 'mtime' ? t('sortByMtime') : (sortBy === 'ctime' ? t('sortByCtime') : t('sortBySize'))) }}</span>
+              <span class="text-[10px] text-zinc-400 font-mono">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+            </button>
+
+            <!-- Sort Popover Menu -->
+            <div 
+              v-if="showSortMenu" 
+              @click.stop
+              class="absolute right-0 top-full mt-1.5 w-48 bg-zinc-900 border border-zinc-750 rounded-xl shadow-2xl backdrop-blur-xl p-1.5 z-50 animate-in fade-in select-none"
+            >
+              <div class="px-2 py-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{{ t('sortBy') }}</div>
+              
+              <button 
+                @click="setSortBy('name'); showSortMenu = false;"
+                :class="sortBy === 'name' ? 'bg-blue-600/20 text-blue-400 font-semibold' : 'text-zinc-300 hover:bg-zinc-800'"
+                class="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors"
+              >
+                <span class="flex items-center gap-1.5">🏷️ {{ t('sortByName') }}</span>
+                <span v-if="sortBy === 'name'" class="text-[10px] text-blue-400 font-mono">{{ sortOrder === 'asc' ? 'A➔Z' : 'Z➔A' }}</span>
+              </button>
+
+              <button 
+                @click="setSortBy('mtime'); showSortMenu = false;"
+                :class="sortBy === 'mtime' ? 'bg-blue-600/20 text-blue-400 font-semibold' : 'text-zinc-300 hover:bg-zinc-800'"
+                class="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors"
+              >
+                <span class="flex items-center gap-1.5">🕒 {{ t('sortByMtime') }}</span>
+                <span v-if="sortBy === 'mtime'" class="text-[10px] text-blue-400 font-mono">{{ sortOrder === 'desc' ? '最新' : '最旧' }}</span>
+              </button>
+
+              <button 
+                @click="setSortBy('ctime'); showSortMenu = false;"
+                :class="sortBy === 'ctime' ? 'bg-blue-600/20 text-blue-400 font-semibold' : 'text-zinc-300 hover:bg-zinc-800'"
+                class="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors"
+              >
+                <span class="flex items-center gap-1.5">📅 {{ t('sortByCtime') }}</span>
+                <span v-if="sortBy === 'ctime'" class="text-[10px] text-blue-400 font-mono">{{ sortOrder === 'desc' ? '最新' : '最旧' }}</span>
+              </button>
+
+              <button 
+                @click="setSortBy('size'); showSortMenu = false;"
+                :class="sortBy === 'size' ? 'bg-blue-600/20 text-blue-400 font-semibold' : 'text-zinc-300 hover:bg-zinc-800'"
+                class="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors"
+              >
+                <span class="flex items-center gap-1.5">📦 {{ t('sortBySize') }}</span>
+                <span v-if="sortBy === 'size'" class="text-[10px] text-blue-400 font-mono">{{ sortOrder === 'desc' ? '最大' : '最小' }}</span>
+              </button>
+
+              <div class="my-1 border-t border-zinc-800"></div>
+
+              <div class="grid grid-cols-2 gap-1 pt-0.5">
+                <button 
+                  @click="setSortOrder('asc'); showSortMenu = false;"
+                  :class="sortOrder === 'asc' ? 'bg-blue-600 text-white font-bold' : 'bg-zinc-800 text-zinc-400 hover:text-white'"
+                  class="py-1 rounded-lg text-xs flex items-center justify-center gap-1 transition-colors"
+                >
+                  <span>▲</span>
+                  <span>{{ t('sortAscShort') }}</span>
+                </button>
+                <button 
+                  @click="setSortOrder('desc'); showSortMenu = false;"
+                  :class="sortOrder === 'desc' ? 'bg-blue-600 text-white font-bold' : 'bg-zinc-800 text-zinc-400 hover:text-white'"
+                  class="py-1 rounded-lg text-xs flex items-center justify-center gap-1 transition-colors"
+                >
+                  <span>▼</span>
+                  <span>{{ t('sortDescShort') }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- 收藏 (Favorites) Button -->
           <button 
             @click="openFavoritesView" 
@@ -238,11 +319,64 @@
               </div>
               <button 
                 v-if="searchQuery.trim()" 
-                @click="performGlobalSearch"
+                @click="performGlobalSearch" 
                 class="mt-2 w-full py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md"
               >
                 🔍 立即搜索全局
               </button>
+            </div>
+
+            <!-- Mobile Sorting Controls Card -->
+            <div class="p-3 bg-zinc-800/80 rounded-xl border border-zinc-750 space-y-2">
+              <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
+                <span class="flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path>
+                  </svg>
+                  <span>{{ t('sortBy') }}</span>
+                </span>
+                <button 
+                  @click="toggleSortOrder"
+                  class="px-2 py-0.5 rounded bg-zinc-700 hover:bg-zinc-600 active:scale-95 text-blue-300 text-[11px] font-bold transition-all flex items-center gap-1"
+                >
+                  <span>{{ sortOrder === 'asc' ? '▲ ' + t('sortAscShort') : '▼ ' + t('sortDescShort') }}</span>
+                </button>
+              </div>
+
+              <div class="grid grid-cols-2 gap-1.5 pt-1">
+                <button 
+                  @click="setSortBy('name')" 
+                  :class="sortBy === 'name' ? 'bg-blue-600 text-white font-bold' : 'bg-zinc-700/50 text-zinc-300 hover:bg-zinc-700'"
+                  class="py-1.5 px-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1"
+                >
+                  <span>🏷️</span>
+                  <span>{{ t('sortByName') }}</span>
+                </button>
+                <button 
+                  @click="setSortBy('mtime')" 
+                  :class="sortBy === 'mtime' ? 'bg-blue-600 text-white font-bold' : 'bg-zinc-700/50 text-zinc-300 hover:bg-zinc-700'"
+                  class="py-1.5 px-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1"
+                >
+                  <span>🕒</span>
+                  <span>{{ t('sortByMtime') }}</span>
+                </button>
+                <button 
+                  @click="setSortBy('ctime')" 
+                  :class="sortBy === 'ctime' ? 'bg-blue-600 text-white font-bold' : 'bg-zinc-700/50 text-zinc-300 hover:bg-zinc-700'"
+                  class="py-1.5 px-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1"
+                >
+                  <span>📅</span>
+                  <span>{{ t('sortByCtime') }}</span>
+                </button>
+                <button 
+                  @click="setSortBy('size')" 
+                  :class="sortBy === 'size' ? 'bg-blue-600 text-white font-bold' : 'bg-zinc-700/50 text-zinc-300 hover:bg-zinc-700'"
+                  class="py-1.5 px-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1"
+                >
+                  <span>📦</span>
+                  <span>{{ t('sortBySize') }}</span>
+                </button>
+              </div>
             </div>
 
             <!-- Actions List -->
@@ -499,8 +633,8 @@
                 </h4>
 
                 <div class="flex items-center justify-between pt-1.5 border-t border-zinc-800/80 mt-auto">
-                  <span class="text-[10px] text-zinc-500 font-mono">
-                    {{ item.type === 'video' ? '视频' : (item.type === 'book' ? '电子书' : (item.page_count ? (item.page_count + 'P') : '')) }}
+                  <span class="text-[10px] text-zinc-500 font-mono truncate max-w-[90px]">
+                    {{ (sortBy === 'mtime' && item.mtime) ? formatDate(item.mtime) : ((sortBy === 'ctime' && item.ctime) ? formatDate(item.ctime) : ((sortBy === 'size' && item.size) ? formatFileSize(item.size) : (item.type === 'video' ? '视频' : (item.type === 'book' ? '电子书' : (item.page_count ? (item.page_count + 'P') : ''))))) }}
                   </span>
                   <button 
                     @click.stop="openCategorySelectModal(item)" 
@@ -614,8 +748,8 @@
                 </h4>
 
                 <div class="flex items-center justify-between pt-1.5 border-t border-zinc-800/80 mt-auto">
-                  <span class="text-[10px] text-zinc-500 font-mono">
-                    {{ item.type === 'video' ? '视频' : (item.type === 'book' ? '电子书' : (item.page_count ? (item.page_count + 'P') : '')) }}
+                  <span class="text-[10px] text-zinc-500 font-mono truncate max-w-[90px]">
+                    {{ (sortBy === 'mtime' && item.mtime) ? formatDate(item.mtime) : ((sortBy === 'ctime' && item.ctime) ? formatDate(item.ctime) : ((sortBy === 'size' && item.size) ? formatFileSize(item.size) : (item.type === 'video' ? '视频' : (item.type === 'book' ? '电子书' : (item.page_count ? (item.page_count + 'P') : ''))))) }}
                   </span>
                   <button 
                     @click.stop="openCategorySelectModal(item)" 
@@ -844,8 +978,8 @@
                 </h4>
 
                 <div class="flex items-center justify-between pt-1.5 border-t border-zinc-800/80 mt-auto">
-                  <span class="text-[10px] text-zinc-500 font-mono">
-                    {{ item.type === 'video' ? '视频' : (item.type === 'book' ? '电子书' : (item.page_count ? (item.page_count + 'P') : '')) }}
+                  <span class="text-[10px] text-zinc-500 font-mono truncate max-w-[90px]">
+                    {{ (sortBy === 'mtime' && item.mtime) ? formatDate(item.mtime) : ((sortBy === 'ctime' && item.ctime) ? formatDate(item.ctime) : ((sortBy === 'size' && item.size) ? formatFileSize(item.size) : (item.type === 'video' ? '视频' : (item.type === 'book' ? '电子书' : (item.page_count ? (item.page_count + 'P') : ''))))) }}
                   </span>
                   <button 
                     @click.stop="openCategorySelectModal(item)" 
@@ -886,7 +1020,7 @@
 
           <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             <div 
-              v-for="shelf in bookshelves" 
+              v-for="shelf in sortedBookshelves" 
               :key="shelf.id"
               :id="'item-' + (shelf.encoded_path || shelf.id)"
               @click="loadLibrary(shelf.encoded_path)"
@@ -915,6 +1049,9 @@
                 <div>
                   <h4 class="font-semibold text-sm text-zinc-100 group-hover:text-blue-400 transition-colors line-clamp-1" :title="shelf.name">{{ shelf.name }}</h4>
                   <p class="text-[11px] text-zinc-500 truncate mt-0.5" :title="shelf.path">{{ shelf.path }}</p>
+                </div>
+                <div v-if="(sortBy === 'mtime' && shelf.mtime) || (sortBy === 'ctime' && shelf.ctime)" class="text-[10px] text-zinc-500 font-mono mt-1 pt-1 border-t border-zinc-800/80">
+                  {{ sortBy === 'mtime' ? formatDate(shelf.mtime) : formatDate(shelf.ctime) }}
                 </div>
               </div>
             </div>
@@ -1002,10 +1139,13 @@
                     </div>
                   </div>
                 </div>
-                <div class="p-2.5">
+                <div class="p-2.5 flex flex-col justify-between flex-1">
                   <h4 class="font-medium text-xs text-zinc-200 group-hover:text-blue-400 transition-colors line-clamp-2" :title="folder.name">
                     {{ folder.name }}
                   </h4>
+                  <div v-if="(sortBy === 'mtime' && folder.mtime) || (sortBy === 'ctime' && folder.ctime)" class="text-[10px] text-zinc-500 font-mono mt-1 pt-1 border-t border-zinc-800/80">
+                    {{ sortBy === 'mtime' ? formatDate(folder.mtime) : formatDate(folder.ctime) }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1135,8 +1275,8 @@
                   </h4>
 
                   <div class="flex items-center justify-between pt-1.5 border-t border-zinc-800/80 mt-auto">
-                    <span class="text-[10px] text-zinc-500 font-mono">
-                      {{ comic.type === 'video' ? '视频' : (comic.type === 'book' ? '电子书' : (comic.page_count ? (comic.page_count + 'P') : '')) }}
+                    <span class="text-[10px] text-zinc-500 font-mono truncate max-w-[90px]">
+                      {{ (sortBy === 'mtime' && comic.mtime) ? formatDate(comic.mtime) : ((sortBy === 'ctime' && comic.ctime) ? formatDate(comic.ctime) : ((sortBy === 'size' && comic.size) ? formatFileSize(comic.size) : (comic.type === 'video' ? '视频' : (comic.type === 'book' ? '电子书' : (comic.page_count ? (comic.page_count + 'P') : ''))))) }}
                     </span>
 
                     <!-- Larger, prominent button in the solid black footer -->
@@ -2457,6 +2597,69 @@
             </div>
           </div>
 
+          <!-- Sort Preference -->
+          <div class="pt-3 border-t border-zinc-800 space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-zinc-300 mb-2">{{ t('defaultSortSetting') }}</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button 
+                  @click="setSortBy('name')" 
+                  :class="sortBy === 'name' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                  class="py-2 px-2 rounded-xl border text-xs transition-all flex items-center justify-center gap-1"
+                >
+                  <span>🏷️</span>
+                  <span>{{ t('sortByName') }}</span>
+                </button>
+                <button 
+                  @click="setSortBy('mtime')" 
+                  :class="sortBy === 'mtime' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                  class="py-2 px-2 rounded-xl border text-xs transition-all flex items-center justify-center gap-1"
+                >
+                  <span>🕒</span>
+                  <span>{{ t('sortByMtime') }}</span>
+                </button>
+                <button 
+                  @click="setSortBy('ctime')" 
+                  :class="sortBy === 'ctime' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                  class="py-2 px-2 rounded-xl border text-xs transition-all flex items-center justify-center gap-1"
+                >
+                  <span>📅</span>
+                  <span>{{ t('sortByCtime') }}</span>
+                </button>
+                <button 
+                  @click="setSortBy('size')" 
+                  :class="sortBy === 'size' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                  class="py-2 px-2 rounded-xl border text-xs transition-all flex items-center justify-center gap-1"
+                >
+                  <span>📦</span>
+                  <span>{{ t('sortBySize') }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-zinc-300 mb-2">{{ t('defaultSortOrderSetting') }}</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button 
+                  @click="setSortOrder('asc')" 
+                  :class="sortOrder === 'asc' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                  class="py-2 px-3 rounded-xl border text-xs transition-all flex items-center justify-center gap-1.5"
+                >
+                  <span>⬆️</span>
+                  <span>{{ t('sortOrderAsc') }}</span>
+                </button>
+                <button 
+                  @click="setSortOrder('desc')" 
+                  :class="sortOrder === 'desc' ? 'bg-blue-600 text-white font-bold border-blue-500' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                  class="py-2 px-3 rounded-xl border text-xs transition-all flex items-center justify-center gap-1.5"
+                >
+                  <span>⬇️</span>
+                  <span>{{ t('sortOrderDesc') }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- 4. 远程 IPv6 访问与安全设置 -->
           <div class="pt-3 border-t border-zinc-800 space-y-3">
             <div class="flex items-center justify-between">
@@ -2825,11 +3028,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.3.4"></script>
-  <script src="/static/js/touch.js?v=1.3.4"></script>
-  <script src="/static/js/modules/api.js?v=1.3.4"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.3.4"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.3.4"></script>
-  <script src="/static/js/app.js?v=1.3.4"></script>
+  <script src="/static/js/i18n.js?v=1.3.5"></script>
+  <script src="/static/js/touch.js?v=1.3.5"></script>
+  <script src="/static/js/modules/api.js?v=1.3.5"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.3.5"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.3.5"></script>
+  <script src="/static/js/app.js?v=1.3.5"></script>
 </body>
 </html>

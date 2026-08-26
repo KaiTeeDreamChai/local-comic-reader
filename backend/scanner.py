@@ -113,6 +113,16 @@ class LibraryScanner:
 
         for entry in entries:
             try:
+                try:
+                    stat = entry.stat()
+                    mtime = int(stat.st_mtime)
+                    ctime = int(getattr(stat, "st_birthtime", stat.st_ctime))
+                    size = stat.st_size if entry.is_file() else 0
+                except Exception:
+                    mtime = 0
+                    ctime = 0
+                    size = 0
+
                 if entry.is_dir():
                     # If this directory directly contains images and no other subdirectories with comics, treat as comic
                     sub_dirs = [s for s in entry.iterdir() if s.is_dir() and not s.name.startswith(".")]
@@ -125,10 +135,15 @@ class LibraryScanner:
                         comics.append({
                             "id": encoded_id,
                             "name": entry.name,
+                            "title": entry.name,
                             "type": "folder",
+                            "ext": "folder",
                             "path": str(entry),
                             "page_count": page_count,
-                            "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
+                            "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0",
+                            "mtime": mtime,
+                            "ctime": ctime,
+                            "size": size
                         })
                     else:
                         # Folder / Series
@@ -137,10 +152,14 @@ class LibraryScanner:
                         folders.append({
                             "id": encode_path(str(entry)),
                             "name": entry.name,
+                            "title": entry.name,
                             "path": str(entry),
                             "type": "directory",
                             "has_images": has_images,
-                            "cover_url": cover_url
+                            "cover_url": cover_url,
+                            "mtime": mtime,
+                            "ctime": ctime,
+                            "size": size
                         })
                 elif entry.is_file() and entry.suffix.lower() in VIDEO_EXTENSIONS:
                     encoded_id = encode_path(str(entry))
@@ -152,7 +171,10 @@ class LibraryScanner:
                         "ext": entry.suffix.lower(),
                         "path": str(entry),
                         "page_count": 1,
-                        "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
+                        "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0",
+                        "mtime": mtime,
+                        "ctime": ctime,
+                        "size": size
                     })
                 elif entry.is_file() and entry.suffix.lower() in BOOK_EXTENSIONS:
                     encoded_id = encode_path(str(entry))
@@ -164,7 +186,10 @@ class LibraryScanner:
                         "ext": entry.suffix.lower(),
                         "path": str(entry),
                         "page_count": 1,
-                        "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
+                        "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0",
+                        "mtime": mtime,
+                        "ctime": ctime,
+                        "size": size
                     })
                 elif cls.is_archive_or_pdf_or_video(entry):
                     encoded_id = encode_path(str(entry))
@@ -178,7 +203,10 @@ class LibraryScanner:
                         "ext": entry.suffix.lower(),
                         "path": str(entry),
                         "page_count": page_count,
-                        "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0" if page_count > 0 else None
+                        "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0" if page_count > 0 else None,
+                        "mtime": mtime,
+                        "ctime": ctime,
+                        "size": size
                     })
             except Exception as e:
                 pass
@@ -186,6 +214,15 @@ class LibraryScanner:
         # If the directory directly contains loose images and no sub-comics/folders, present it as a comic album
         image_files = [e for e in entries if e.is_file() and e.suffix.lower() in IMAGE_EXTENSIONS]
         if image_files and len(folders) == 0 and len(comics) == 0:
+            try:
+                stat = dir_path.stat()
+                mtime = int(stat.st_mtime)
+                ctime = int(getattr(stat, "st_birthtime", stat.st_ctime))
+                size = 0
+            except Exception:
+                mtime = 0
+                ctime = 0
+                size = 0
             encoded_id = encode_path(str(dir_path))
             comics.append({
                 "id": encoded_id,
@@ -195,7 +232,10 @@ class LibraryScanner:
                 "ext": "album",
                 "path": str(dir_path),
                 "page_count": len(image_files),
-                "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0"
+                "cover_url": f"/api/comic/thumbnail?comic_id={encoded_id}&page_index=0",
+                "mtime": mtime,
+                "ctime": ctime,
+                "size": size
             })
 
         # Compute safe parent path (do not escape above bookshelf root)

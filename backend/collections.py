@@ -46,7 +46,10 @@ def sanitize_item(item: Dict[str, Any]) -> Dict[str, Any]:
         "ext": item.get("ext", ""),
         "page_count": item.get("page_count", 0),
         "cover_url": item.get("cover_url"),
-        "added_at": int(time.time())
+        "mtime": item.get("mtime", 0),
+        "ctime": item.get("ctime", 0),
+        "size": item.get("size", 0),
+        "added_at": item.get("added_at") or int(time.time())
     }
 
 
