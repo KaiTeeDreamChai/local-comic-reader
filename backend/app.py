@@ -21,11 +21,12 @@ app.add_middleware(
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
     path = request.url.path
-    # Allow static assets, index HTML, auth endpoints, and favicon
+    # Allow static assets, index HTML, auth endpoints, system info, and favicon
     if (
         path == "/"
         or path.startswith("/static")
         or path.startswith("/api/auth")
+        or path == "/api/info"
         or path == "/favicon.ico"
     ):
         return await call_next(request)

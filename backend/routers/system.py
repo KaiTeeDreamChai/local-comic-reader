@@ -22,14 +22,47 @@ class SettingsUpdate(BaseModel):
 
 @router.get("/api/info")
 def get_system_info():
-    """Return platform info, LAN IPv4 addresses, and Remote IPv6 addresses."""
+    """Return platform info, LAN IPv4 addresses, Remote IPv6 addresses, and custom domain URLs."""
     port = int(os.environ.get("PORT", 7891))
+    cfg = load_config()
+    custom_domain = cfg.get("settings", {}).get("custom_domain", "").strip()
+
     net_info = get_server_network_info()
     ipv4_list = net_info.get("ipv4", [])
     ipv6_list = net_info.get("ipv6", [])
     
     lan_urls = [f"http://{ip}:{port}" for ip in ipv4_list]
     ipv6_urls = [f"http://[{ip}]:{port}" for ip in ipv6_list]
+    
+    custom_domain_urls = []
+    if custom_domain:
+        clean_domain = custom_domain
+        protocol = "http"
+        if clean_domain.startswith("https://"):
+            protocol = "https"
+            clean_domain = clean_domain[8:]
+        elif clean_domain.startswith("http://"):
+            clean_domain = clean_domain[7:]
+            
+        clean_domain = clean_domain.rstrip("/")
+        
+        if clean_domain.startswith("[") and "]" in clean_domain:
+            if clean_domain.endswith("]"):
+                custom_domain_urls.append(f"{protocol}://{clean_domain}:{port}")
+            else:
+                custom_domain_urls.append(f"{protocol}://{clean_domain}")
+        elif ":" in clean_domain:
+            custom_domain_urls.append(f"{protocol}://{clean_domain}")
+        else:
+            import ipaddress
+            try:
+                ip_obj = ipaddress.ip_address(clean_domain)
+                if ip_obj.version == 6:
+                    custom_domain_urls.append(f"{protocol}://[{clean_domain}]:{port}")
+                else:
+                    custom_domain_urls.append(f"{protocol}://{clean_domain}:{port}")
+            except Exception:
+                custom_domain_urls.append(f"{protocol}://{clean_domain}:{port}")
     
     return {
         "app": "Local Comic & Album Reader",
@@ -38,7 +71,9 @@ def get_system_info():
         "local_ips": ipv4_list,
         "lan_urls": lan_urls,
         "ipv6_ips": ipv6_list,
-        "ipv6_urls": ipv6_urls
+        "ipv6_urls": ipv6_urls,
+        "custom_domain": custom_domain,
+        "custom_domain_urls": custom_domain_urls
     }
 
 

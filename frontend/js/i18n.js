@@ -187,7 +187,13 @@ const i18n = {
     ipv6DirectTitle: 'IPv6 远程公网直连地址',
     ipv6Desc: '在手机开启 5G/4G 流量或异地电脑浏览器中输入以下 IPv6 地址即可直连访问：',
     noIpv6Found: '当前未检测到公网 IPv6 地址，若宽带支持可在光猫/路由器开启 IPv6 分配',
-    copySuccess: '已复制到剪切板'
+    copySuccess: '已复制到剪切板',
+    customDomainLabel: '绑定自定义域名 / DDNS (如 dynv6)',
+    customDomainPlaceholder: '例如: mycomic.dynv6.net 或 custom.domain.com',
+    customDomainDesc: '若您在 dynv6、DuckDNS 等配置了动态域名，填入后将自动生成对应的远程访问链接。',
+    customDomainDirectTitle: '自定义域名 / DDNS 专属直连地址',
+    coexistenceTipTitle: '多服务并存保障 (与 MC 服务器等)',
+    coexistenceTipDesc: '本阅读器仅占用专属端口 (7891)，与同一主机上的 Minecraft (25565)、网页服务器等其他网络服务端口完全独立隔离，不会冲突或影响其他服务的正常运行。'
   },
 
   en: {
@@ -363,7 +369,13 @@ const i18n = {
     ipv6DirectTitle: 'IPv6 Direct Remote Addresses',
     ipv6Desc: 'Access directly from mobile cellular data (5G/4G) or remote locations using these IPv6 URLs:',
     noIpv6Found: 'No public IPv6 address detected. Enable IPv6 in your home router settings if supported by your ISP',
-    copySuccess: 'Copied to clipboard'
+    copySuccess: 'Copied to clipboard',
+    customDomainLabel: 'Custom Domain / DDNS Binding (e.g. dynv6)',
+    customDomainPlaceholder: 'e.g. mycomic.dynv6.net or custom.domain.com',
+    customDomainDesc: 'If you configured a dynamic domain via dynv6 or DuckDNS, enter it here to generate quick access URLs.',
+    customDomainDirectTitle: 'Custom Domain / DDNS Access URLs',
+    coexistenceTipTitle: 'Service Coexistence (e.g. Minecraft Server)',
+    coexistenceTipDesc: 'This application strictly uses its dedicated port (default 7891) and runs completely isolated from other host services like Minecraft (25565) or Web servers, ensuring no port collision or interference.'
   }
 };
 

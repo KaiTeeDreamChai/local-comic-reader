@@ -30,6 +30,7 @@ class AuthConfigUpdate(BaseModel):
     lan_bypass_auth: Optional[bool] = None
     new_password: Optional[str] = None
     old_password: Optional[str] = None
+    custom_domain: Optional[str] = None
 
 
 @router.get("/status")
@@ -41,6 +42,7 @@ def get_auth_status(request: Request):
     remote_auth_enabled = settings.get("remote_auth_enabled", True)
     has_password = bool(settings.get("remote_password_hash"))
     lan_bypass = settings.get("lan_bypass_auth", True)
+    custom_domain = settings.get("custom_domain", "")
     
     client_ip = get_client_ip(request)
     is_local = is_local_ip(client_ip, allow_lan=lan_bypass)
@@ -57,7 +59,8 @@ def get_auth_status(request: Request):
         "is_authenticated": is_authenticated,
         "has_password": has_password,
         "remote_auth_enabled": remote_auth_enabled,
-        "lan_bypass_auth": lan_bypass
+        "lan_bypass_auth": lan_bypass,
+        "custom_domain": custom_domain
     }
 
 
@@ -132,15 +135,19 @@ def update_auth_config(payload: AuthConfigUpdate, request: Request):
     if payload.lan_bypass_auth is not None:
         settings["lan_bypass_auth"] = payload.lan_bypass_auth
         
+    if payload.custom_domain is not None:
+        settings["custom_domain"] = payload.custom_domain.strip()
+        
     cfg["settings"] = settings
     save_config(cfg)
     
     return {
         "status": "success",
-        "message": "安全设置已更新",
+        "message": "安全与域名设置已更新",
         "settings": {
             "remote_auth_enabled": settings.get("remote_auth_enabled", True),
             "lan_bypass_auth": settings.get("lan_bypass_auth", True),
+            "custom_domain": settings.get("custom_domain", ""),
             "has_password": bool(settings.get("remote_password_hash"))
         }
     }

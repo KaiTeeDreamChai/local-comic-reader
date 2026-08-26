@@ -13,7 +13,13 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "default_reading_mode": "paged",  # "paged" or "scroll"
         "default_reading_direction": "ltr",  # "ltr" (left to right) or "rtl" (right to left)
         "thumbnail_quality": 80,
-        "max_thumbnail_size": 400
+        "max_thumbnail_size": 400,
+        "custom_domain": "",  # e.g. "mycomic.dynv6.net" or custom IPv6 address
+        "remote_auth_enabled": True,
+        "lan_bypass_auth": True,
+        "remote_password_hash": "",
+        "remote_password_salt": "",
+        "auth_secret_key": ""
     }
 }
 

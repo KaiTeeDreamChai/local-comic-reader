@@ -82,6 +82,7 @@ createApp({
     const securitySettings = reactive({
       remote_auth_enabled: true,
       lan_bypass_auth: true,
+      custom_domain: '',
       has_password: false,
       old_password: '',
       new_password: '',
@@ -767,6 +768,7 @@ createApp({
         authStatus.value = auth;
         securitySettings.remote_auth_enabled = auth.remote_auth_enabled;
         securitySettings.lan_bypass_auth = auth.lan_bypass_auth;
+        securitySettings.custom_domain = auth.custom_domain || '';
         securitySettings.has_password = auth.has_password;
 
         if (auth.auth_required && !auth.is_authenticated) {
@@ -831,7 +833,8 @@ createApp({
       try {
         const payload = {
           remote_auth_enabled: securitySettings.remote_auth_enabled,
-          lan_bypass_auth: securitySettings.lan_bypass_auth
+          lan_bypass_auth: securitySettings.lan_bypass_auth,
+          custom_domain: securitySettings.custom_domain
         };
         if (securitySettings.new_password) {
           payload.new_password = securitySettings.new_password;
@@ -839,13 +842,24 @@ createApp({
         }
         const res = await window.API.updateAuthConfig(payload);
         securitySettings.has_password = res.settings.has_password;
+        securitySettings.custom_domain = res.settings.custom_domain || '';
         authStatus.value.has_password = res.settings.has_password;
         authStatus.value.remote_auth_enabled = res.settings.remote_auth_enabled;
         authStatus.value.lan_bypass_auth = res.settings.lan_bypass_auth;
+        authStatus.value.custom_domain = res.settings.custom_domain || '';
         securitySettings.old_password = '';
         securitySettings.new_password = '';
         securitySettings.confirm_password = '';
-        securitySuccessMsg.value = res.message || '安全设置保存成功';
+        securitySuccessMsg.value = res.message || '安全与域名设置保存成功';
+
+        // Refresh systemInfo to update displayed URLs
+        try {
+          const info = await window.API.getSystemInfo();
+          systemInfo.value = info;
+        } catch (e) {
+          console.error(e);
+        }
+
         setTimeout(() => { securitySuccessMsg.value = ''; }, 3500);
       } catch (e) {
         securityErrorMsg.value = e.message || '保存设置失败';
