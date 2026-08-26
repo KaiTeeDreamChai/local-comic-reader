@@ -133,6 +133,25 @@ def create_server_sockets(port: int) -> list:
     return sockets
 
 
+def ensure_windows_firewall_rule(port: int):
+    """Attempt to add Windows Defender Firewall rule automatically if on Windows."""
+    if sys.platform != "win32":
+        return
+    try:
+        check_cmd = ["netsh", "advfirewall", "firewall", "show", "rule", f"name=ComicReader-{port}"]
+        res = subprocess.run(check_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if f"ComicReader-{port}" not in res.stdout:
+            add_cmd = [
+                "netsh", "advfirewall", "firewall", "add", "rule",
+                f"name=ComicReader-{port}", "dir=in", "action=allow",
+                "protocol=TCP", f"localport={port}", "profile=any",
+                "description=Allow Comic Reader IPv4 and IPv6 inbound access"
+            ]
+            subprocess.run(add_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except Exception:
+        pass
+
+
 def start_server():
     from backend.utils import get_server_network_info
     from backend.config import load_config
@@ -143,6 +162,8 @@ def start_server():
         print(f"\n[提示] 默认端口 {DEFAULT_PORT} 已被占用，已自动递增切换到可用端口: {port}")
 
     os.environ["PORT"] = str(port)
+    ensure_windows_firewall_rule(port)
+
     net_info = get_server_network_info()
     ipv4_list = net_info.get("ipv4", [])
     ipv6_list = net_info.get("ipv6", [])
@@ -174,9 +195,13 @@ def start_server():
         print(" 🌐 远程 IPv6 外网直连访问地址 (支持 5G/4G 手机流量及异地访问):")
         for ip in ipv6_list:
             print(f"     👉 http://[{ip}]:{port}")
-        print("     🔒 安全提示: 检测到远程连接时将自动要求密码验证")
-        print()
+        print("     🔒 安全提示: 检测到远程连接时将自动要求密码验证\n")
 
+    print("-" * 64)
+    print(" 💡 远程 5G/外网访问排查提示 (若手机提示响应超时 ERR_CONNECTION_TIMED_OUT):")
+    print("    1. Windows 防火墙: 请右键【以管理员身份运行】 allow_firewall.bat 放行端口 7891")
+    print("    2. 路由器 IPv6 防火墙: 请登录 Wi-Fi 路由器后台 (如 192.168.1.1) 关闭【IPv6 防火墙】")
+    print("    3. dynv6 域名解析: 确保 dynv6 解析地址与上方公网 IPv6 一致")
     print("-" * 64)
     print(" 提示: 按 Ctrl + C 可随时停止服务")
     print("=" * 64 + "\n")
