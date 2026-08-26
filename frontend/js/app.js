@@ -62,7 +62,7 @@ createApp({
     const addingShelf = ref(false);
 
     // 5. Authentication & Remote Security State
-    const authStatus = ref({
+    const authStatus = reactive({
       is_local: true,
       is_remote: false,
       auth_required: false,
@@ -70,6 +70,7 @@ createApp({
       has_password: false,
       remote_auth_enabled: true,
       lan_bypass_auth: true,
+      custom_domain: '',
       client_ip: ''
     });
     const showLoginModal = ref(false);
@@ -765,19 +766,21 @@ createApp({
     const checkAuthStatus = async () => {
       try {
         const auth = await window.API.getAuthStatus();
-        authStatus.value = auth;
-        securitySettings.remote_auth_enabled = auth.remote_auth_enabled;
-        securitySettings.lan_bypass_auth = auth.lan_bypass_auth;
-        securitySettings.custom_domain = auth.custom_domain || '';
-        securitySettings.has_password = auth.has_password;
+        if (auth && typeof auth === 'object') {
+          Object.assign(authStatus, auth);
+          securitySettings.remote_auth_enabled = !!auth.remote_auth_enabled;
+          securitySettings.lan_bypass_auth = !!auth.lan_bypass_auth;
+          securitySettings.custom_domain = auth.custom_domain || '';
+          securitySettings.has_password = !!auth.has_password;
 
-        if (auth.auth_required && !auth.is_authenticated) {
-          showLoginModal.value = true;
-          return false;
+          if (auth.auth_required && !auth.is_authenticated) {
+            showLoginModal.value = true;
+            return false;
+          }
         }
         return true;
       } catch (e) {
-        console.error('Failed to get auth status:', e);
+        console.warn('Failed to get auth status:', e);
         return true;
       }
     };
@@ -792,8 +795,8 @@ createApp({
       try {
         await window.API.login(loginPassword.value.trim(), loginRemember.value);
         showLoginModal.value = false;
-        authStatus.value.is_authenticated = true;
-        authStatus.value.auth_required = false;
+        authStatus.is_authenticated = true;
+        authStatus.auth_required = false;
         loginPassword.value = '';
         await loadCollections();
         await loadLibrary();
@@ -807,16 +810,18 @@ createApp({
     const handleLogout = async () => {
       try {
         await window.API.logout();
-        authStatus.value.is_authenticated = false;
+        authStatus.is_authenticated = false;
         const auth = await window.API.getAuthStatus();
-        authStatus.value = auth;
-        if (auth.auth_required) {
-          showLoginModal.value = true;
-        } else {
-          alert('已退出远程授权状态');
+        if (auth && typeof auth === 'object') {
+          Object.assign(authStatus, auth);
+          if (auth.auth_required) {
+            showLoginModal.value = true;
+          } else {
+            alert('已退出远程授权状态');
+          }
         }
       } catch (e) {
-        console.error(e);
+        console.warn('Logout error:', e);
       }
     };
 
@@ -841,23 +846,25 @@ createApp({
           payload.old_password = securitySettings.old_password;
         }
         const res = await window.API.updateAuthConfig(payload);
-        securitySettings.has_password = res.settings.has_password;
-        securitySettings.custom_domain = res.settings.custom_domain || '';
-        authStatus.value.has_password = res.settings.has_password;
-        authStatus.value.remote_auth_enabled = res.settings.remote_auth_enabled;
-        authStatus.value.lan_bypass_auth = res.settings.lan_bypass_auth;
-        authStatus.value.custom_domain = res.settings.custom_domain || '';
+        if (res && res.settings) {
+          securitySettings.has_password = !!res.settings.has_password;
+          securitySettings.custom_domain = res.settings.custom_domain || '';
+          authStatus.has_password = !!res.settings.has_password;
+          authStatus.remote_auth_enabled = !!res.settings.remote_auth_enabled;
+          authStatus.lan_bypass_auth = !!res.settings.lan_bypass_auth;
+          authStatus.custom_domain = res.settings.custom_domain || '';
+        }
         securitySettings.old_password = '';
         securitySettings.new_password = '';
         securitySettings.confirm_password = '';
-        securitySuccessMsg.value = res.message || '安全与域名设置保存成功';
+        securitySuccessMsg.value = (res && res.message) || '安全与域名设置保存成功';
 
         // Refresh systemInfo to update displayed URLs
         try {
           const info = await window.API.getSystemInfo();
           systemInfo.value = info;
         } catch (e) {
-          console.error(e);
+          console.warn(e);
         }
 
         setTimeout(() => { securitySuccessMsg.value = ''; }, 3500);
