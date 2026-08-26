@@ -61,8 +61,38 @@ createApp({
     const newShelfName = ref('');
     const addingShelf = ref(false);
 
-    // 5. System & Network State
-    const systemInfo = ref({ lan_urls: [], local_ips: [], port: 8000, platform: '' });
+    // 5. Authentication & Remote Security State
+    const authStatus = ref({
+      is_local: true,
+      is_remote: false,
+      auth_required: false,
+      is_authenticated: true,
+      has_password: false,
+      remote_auth_enabled: true,
+      lan_bypass_auth: true,
+      client_ip: ''
+    });
+    const showLoginModal = ref(false);
+    const loginPassword = ref('');
+    const loginRemember = ref(true);
+    const loginLoading = ref(false);
+    const loginError = ref('');
+    const showPasswordText = ref(false);
+
+    const securitySettings = reactive({
+      remote_auth_enabled: true,
+      lan_bypass_auth: true,
+      has_password: false,
+      old_password: '',
+      new_password: '',
+      confirm_password: ''
+    });
+    const savingSecurity = ref(false);
+    const securitySuccessMsg = ref('');
+    const securityErrorMsg = ref('');
+
+    // 6. System & Network State
+    const systemInfo = ref({ lan_urls: [], local_ips: [], ipv6_urls: [], ipv6_ips: [], port: 7891, platform: '' });
     const downloadingComics = ref(new Set());
     const weakNetworkMode = ref(localStorage.getItem('comic_weak_net_mode') === 'true');
 
@@ -730,7 +760,122 @@ createApp({
       }
     };
 
-    // 14. Lifecycle Hooks
+    // 14. Authentication & Security Handlers
+    const checkAuthStatus = async () => {
+      try {
+        const auth = await window.API.getAuthStatus();
+        authStatus.value = auth;
+        securitySettings.remote_auth_enabled = auth.remote_auth_enabled;
+        securitySettings.lan_bypass_auth = auth.lan_bypass_auth;
+        securitySettings.has_password = auth.has_password;
+
+        if (auth.auth_required && !auth.is_authenticated) {
+          showLoginModal.value = true;
+          return false;
+        }
+        return true;
+      } catch (e) {
+        console.error('Failed to get auth status:', e);
+        return true;
+      }
+    };
+
+    const handleLogin = async () => {
+      if (!loginPassword.value.trim()) {
+        loginError.value = t('remoteAuthInputPlaceholder');
+        return;
+      }
+      loginLoading.value = true;
+      loginError.value = '';
+      try {
+        await window.API.login(loginPassword.value.trim(), loginRemember.value);
+        showLoginModal.value = false;
+        authStatus.value.is_authenticated = true;
+        authStatus.value.auth_required = false;
+        loginPassword.value = '';
+        await loadCollections();
+        await loadLibrary();
+      } catch (e) {
+        loginError.value = e.message || '密码验证失败';
+      } finally {
+        loginLoading.value = false;
+      }
+    };
+
+    const handleLogout = async () => {
+      try {
+        await window.API.logout();
+        authStatus.value.is_authenticated = false;
+        const auth = await window.API.getAuthStatus();
+        authStatus.value = auth;
+        if (auth.auth_required) {
+          showLoginModal.value = true;
+        } else {
+          alert('已退出远程授权状态');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    const handleSaveSecuritySettings = async () => {
+      if (securitySettings.new_password) {
+        if (securitySettings.new_password !== securitySettings.confirm_password) {
+          securityErrorMsg.value = '两次输入的新密码不一致';
+          return;
+        }
+      }
+      savingSecurity.value = true;
+      securityErrorMsg.value = '';
+      securitySuccessMsg.value = '';
+      try {
+        const payload = {
+          remote_auth_enabled: securitySettings.remote_auth_enabled,
+          lan_bypass_auth: securitySettings.lan_bypass_auth
+        };
+        if (securitySettings.new_password) {
+          payload.new_password = securitySettings.new_password;
+          payload.old_password = securitySettings.old_password;
+        }
+        const res = await window.API.updateAuthConfig(payload);
+        securitySettings.has_password = res.settings.has_password;
+        authStatus.value.has_password = res.settings.has_password;
+        authStatus.value.remote_auth_enabled = res.settings.remote_auth_enabled;
+        authStatus.value.lan_bypass_auth = res.settings.lan_bypass_auth;
+        securitySettings.old_password = '';
+        securitySettings.new_password = '';
+        securitySettings.confirm_password = '';
+        securitySuccessMsg.value = res.message || '安全设置保存成功';
+        setTimeout(() => { securitySuccessMsg.value = ''; }, 3500);
+      } catch (e) {
+        securityErrorMsg.value = e.message || '保存设置失败';
+      } finally {
+        savingSecurity.value = false;
+      }
+    };
+
+    const copyToClipboard = async (text) => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        alert(t('copySuccess') + ':\n' + text);
+      } catch (e) {
+        prompt('请复制访问地址：', text);
+      }
+    };
+
+    // 15. Lifecycle Hooks
     onMounted(async () => {
       comicReader.updateScreenOrientation();
       window.addEventListener('resize', comicReader.updateScreenOrientation);
@@ -751,8 +896,11 @@ createApp({
         console.error(e);
       }
 
-      await loadCollections();
-      await loadLibrary();
+      const canProceed = await checkAuthStatus();
+      if (canProceed) {
+        await loadCollections();
+        await loadLibrary();
+      }
     });
 
     onUnmounted(() => {
@@ -809,6 +957,24 @@ createApp({
       downloadingComics,
       weakNetworkMode,
       toggleWeakNetworkMode,
+
+      // Authentication & Remote Security
+      authStatus,
+      showLoginModal,
+      loginPassword,
+      loginRemember,
+      loginLoading,
+      loginError,
+      showPasswordText,
+      securitySettings,
+      savingSecurity,
+      securitySuccessMsg,
+      securityErrorMsg,
+      checkAuthStatus,
+      handleLogin,
+      handleLogout,
+      handleSaveSecuritySettings,
+      copyToClipboard,
 
       // Collections & Categories
       favorites,

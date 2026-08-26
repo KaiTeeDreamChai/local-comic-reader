@@ -35,29 +35,71 @@ def decode_path(encoded_str: str) -> str:
         raise ValueError(f"无效或不可用的路径编码: {str(e)}")
 
 
-def get_local_ips() -> List[str]:
-    """Retrieve all local network IP addresses for LAN access."""
-    ips = []
+import ipaddress
+
+def get_server_network_info() -> dict:
+    """Retrieve all local IPv4 and global/public IPv6 addresses."""
+    ipv4_list = []
+    ipv6_list = []
+    
+    # 1. Via socket getaddrinfo
     try:
         hostname = socket.gethostname()
-        for ip in socket.gethostbyname_ex(hostname)[2]:
-            if not ip.startswith("127.") and not ip.startswith("169.254."):
-                ips.append(ip)
+        for info in socket.getaddrinfo(hostname, None):
+            family, _, _, _, sockaddr = info
+            ip = sockaddr[0]
+            if family == socket.AF_INET:
+                if not ip.startswith("127.") and not ip.startswith("169.254."):
+                    if ip not in ipv4_list:
+                        ipv4_list.append(ip)
+            elif family == socket.AF_INET6:
+                clean_ip = ip.split('%')[0]
+                try:
+                    addr = ipaddress.ip_address(clean_ip)
+                    # Include global unicast IPv6 addresses (exclude loopback, link-local, unspecified)
+                    if not addr.is_loopback and not addr.is_link_local and not addr.is_unspecified:
+                        if clean_ip not in ipv6_list:
+                            ipv6_list.append(clean_ip)
+                except Exception:
+                    pass
     except Exception:
         pass
 
-    # Fallback method by opening a dummy UDP socket to an external address
+    # 2. UDP socket probing for primary IPv4
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(0.1)
         s.connect(('8.8.8.8', 80))
-        main_ip = s.getsockname()[0]
+        main_v4 = s.getsockname()[0]
         s.close()
-        if main_ip and main_ip not in ips and not main_ip.startswith("127."):
-            ips.insert(0, main_ip)
+        if main_v4 and main_v4 not in ipv4_list and not main_v4.startswith("127."):
+            ipv4_list.insert(0, main_v4)
     except Exception:
         pass
 
-    if not ips:
-        ips.append("127.0.0.1")
-    return ips
+    # 3. UDP socket probing for primary IPv6 if available
+    try:
+        s6 = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        s6.settimeout(0.1)
+        s6.connect(('2001:4860:4860::8888', 80))
+        main_v6 = s6.getsockname()[0].split('%')[0]
+        s6.close()
+        addr = ipaddress.ip_address(main_v6)
+        if not addr.is_loopback and not addr.is_link_local and not addr.is_unspecified:
+            if main_v6 not in ipv6_list:
+                ipv6_list.insert(0, main_v6)
+    except Exception:
+        pass
+
+    if not ipv4_list:
+        ipv4_list.append("127.0.0.1")
+
+    return {
+        "ipv4": ipv4_list,
+        "ipv6": ipv6_list
+    }
+
+
+def get_local_ips() -> List[str]:
+    """Retrieve all local network IP addresses for LAN access."""
+    return get_server_network_info()["ipv4"]

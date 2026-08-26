@@ -1,10 +1,11 @@
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from .routers import api_router
+from .auth import is_request_auth_required, is_request_authenticated
 
 app = FastAPI(title="Local Comic & Media Reader", version="1.0.0")
 
@@ -16,6 +17,32 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    path = request.url.path
+    # Allow static assets, index HTML, auth endpoints, and favicon
+    if (
+        path == "/"
+        or path.startswith("/static")
+        or path.startswith("/api/auth")
+        or path == "/favicon.ico"
+    ):
+        return await call_next(request)
+
+    # Intercept unauthenticated remote requests
+    if is_request_auth_required(request):
+        if not is_request_authenticated(request):
+            return JSONResponse(
+                status_code=401,
+                content={
+                    "detail": "检测到远程连接，请输入访问密码以继续",
+                    "auth_required": True,
+                    "is_remote": True
+                }
+            )
+
+    return await call_next(request)
 
 # Register modular routers
 app.include_router(api_router)

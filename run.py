@@ -22,15 +22,29 @@ REQUIRED_PACKAGES = {
 }
 
 
-def is_port_available(port: int, host: str = "0.0.0.0") -> bool:
-    """Check if a specific port is free to bind."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
+def is_port_available(port: int, host: str = "::") -> bool:
+    """Check if a specific port is free to bind (dual-stack IPv6/IPv4)."""
+    # 1. Try dual-stack IPv6
+    try:
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            except (AttributeError, OSError):
+                pass
             s.bind((host, port))
             return True
-        except OSError:
-            return False
+    except Exception:
+        pass
+
+    # 2. Fallback to IPv4 check
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind(("0.0.0.0", port))
+            return True
+    except OSError:
+        return False
 
 
 def find_available_port(start_port: int = DEFAULT_PORT, max_tries: int = 100) -> int:
@@ -68,7 +82,7 @@ def check_and_install_dependencies():
 
 
 def start_server():
-    from backend.utils import get_local_ips
+    from backend.utils import get_server_network_info
     import uvicorn
 
     port = find_available_port(DEFAULT_PORT)
@@ -76,20 +90,45 @@ def start_server():
         print(f"\n[提示] 默认端口 {DEFAULT_PORT} 已被占用，已自动递增切换到可用端口: {port}")
 
     os.environ["PORT"] = str(port)
-    ips = get_local_ips()
+    net_info = get_server_network_info()
+    ipv4_list = net_info.get("ipv4", [])
+    ipv6_list = net_info.get("ipv6", [])
 
-    print("\n" + "=" * 60)
-    print("      本地漫画与画册局域网浏览器 (Local Comic Reader)")
-    print("=" * 60)
-    print(" [✓] 服务已成功启动！\n")
+    # Check if dual-stack :: host is supported
+    bind_host = "::"
+    try:
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as test_sock:
+            test_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            test_sock.bind(("::", 0))
+    except Exception:
+        bind_host = "0.0.0.0"
+
+    print("\n" + "=" * 64)
+    print("      本地漫画与画册多端远程阅读器 (Local Comic Reader)")
+    print("=" * 64)
+    print(" [✓] 服务已成功启动 (IPv4 / IPv6 双栈已就绪)！\n")
     print(f" 💻 本机电脑访问地址 (端口: {port}):")
     print(f"     👉 http://127.0.0.1:{port} 或 http://localhost:{port}\n")
-    print(" 📱 局域网平板/手机 (iPad / Android) 访问地址 (需连接同一 Wi-Fi):")
-    for ip in ips:
-        print(f"     👉 http://{ip}:{port}")
-    print("\n" + "-" * 60)
+    
+    if ipv4_list:
+        print(" 📱 局域网平板/手机访问地址 (需连接同一 Wi-Fi):")
+        for ip in ipv4_list:
+            print(f"     👉 http://{ip}:{port}")
+        print()
+
+    if ipv6_list:
+        print(" 🌐 远程 IPv6 外网直连访问地址 (支持 5G/4G 手机流量及异地访问):")
+        for ip in ipv6_list:
+            print(f"     👉 http://[{ip}]:{port}")
+        print("     🔒 安全提示: 检测到远程连接时将自动要求密码验证")
+        print()
+    else:
+        print(" 🌐 提示: 当前未检测到公网 IPv6 地址，若宽带已开通 IPv6 可在路由器开启分配")
+        print()
+
+    print("-" * 64)
     print(" 提示: 按 Ctrl + C 可随时停止服务")
-    print("=" * 60 + "\n")
+    print("=" * 64 + "\n")
 
     # Open browser automatically after a short delay
     def open_browser():
@@ -99,10 +138,10 @@ def start_server():
     import threading
     threading.Thread(target=open_browser, daemon=True).start()
 
-    # Start uvicorn server with optimized concurrency settings
+    # Start uvicorn server with dual-stack IPv6 host
     uvicorn.run(
         "backend.app:app",
-        host="0.0.0.0",
+        host=bind_host,
         port=port,
         reload=False,
         log_level="info",

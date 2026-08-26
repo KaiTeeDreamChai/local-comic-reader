@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ..config import load_config, save_config, add_bookshelf, remove_bookshelf
-from ..utils import get_local_ips
+from ..utils import get_local_ips, get_server_network_info
 
 router = APIRouter(tags=["System & Config"])
 
@@ -22,16 +22,23 @@ class SettingsUpdate(BaseModel):
 
 @router.get("/api/info")
 def get_system_info():
-    """Return platform info, LAN addresses, and active port."""
+    """Return platform info, LAN IPv4 addresses, and Remote IPv6 addresses."""
     port = int(os.environ.get("PORT", 7891))
-    ips = get_local_ips()
-    urls = [f"http://{ip}:{port}" for ip in ips]
+    net_info = get_server_network_info()
+    ipv4_list = net_info.get("ipv4", [])
+    ipv6_list = net_info.get("ipv6", [])
+    
+    lan_urls = [f"http://{ip}:{port}" for ip in ipv4_list]
+    ipv6_urls = [f"http://[{ip}]:{port}" for ip in ipv6_list]
+    
     return {
         "app": "Local Comic & Album Reader",
         "platform": sys.platform,
         "port": port,
-        "local_ips": ips,
-        "lan_urls": urls
+        "local_ips": ipv4_list,
+        "lan_urls": lan_urls,
+        "ipv6_ips": ipv6_list,
+        "ipv6_urls": ipv6_urls
     }
 
 

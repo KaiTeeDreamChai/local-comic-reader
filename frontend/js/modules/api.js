@@ -154,6 +154,43 @@ const API = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Failed to update category item');
     return data;
+  },
+
+  // Authentication & Security
+  async getAuthStatus() {
+    const res = await fetch('/api/auth/status');
+    if (!res.ok) throw new Error('Failed to fetch auth status');
+    return await res.json();
+  },
+
+  async login(password, remember = true) {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password, remember })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || '密码验证失败');
+    return data;
+  },
+
+  async logout() {
+    const res = await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return await res.json();
+  },
+
+  async updateAuthConfig(config) {
+    const res = await fetch('/api/auth/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || '更新安全设置失败');
+    return data;
   }
 };
 
