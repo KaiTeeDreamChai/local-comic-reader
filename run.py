@@ -81,8 +81,61 @@ def check_and_install_dependencies():
             subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
 
 
+def create_server_sockets(port: int) -> list:
+    """Create listening sockets for both IPv4 and IPv6 (dual-stack)."""
+    # 1. Try single dual-stack socket with explicit IPV6_V6ONLY = 0 (Crucial for Windows dual-stack)
+    try:
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        except Exception:
+            pass
+        sock.bind(("::", port))
+        sock.listen(2048)
+        return [sock]
+    except Exception:
+        pass
+
+    # 2. Fallback: bind separate IPv4 and IPv6 sockets
+    sockets = []
+    # IPv4 Socket (0.0.0.0)
+    try:
+        s4 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s4.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s4.bind(("0.0.0.0", port))
+        s4.listen(2048)
+        sockets.append(s4)
+    except Exception as e:
+        print(f"[警告] IPv4 端口绑定异常: {e}")
+
+    # IPv6 Socket (:: with IPV6_V6ONLY = 1)
+    try:
+        s6 = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        s6.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s6.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+        except Exception:
+            pass
+        s6.bind(("::", port))
+        s6.listen(2048)
+        sockets.append(s6)
+    except Exception as e:
+        print(f"[警告] IPv6 端口绑定异常: {e}")
+
+    if not sockets:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(("0.0.0.0", port))
+        s.listen(2048)
+        sockets.append(s)
+
+    return sockets
+
+
 def start_server():
     from backend.utils import get_server_network_info
+    from backend.config import load_config
     import uvicorn
 
     port = find_available_port(DEFAULT_PORT)
@@ -93,23 +146,24 @@ def start_server():
     net_info = get_server_network_info()
     ipv4_list = net_info.get("ipv4", [])
     ipv6_list = net_info.get("ipv6", [])
+    
+    cfg = load_config()
+    custom_domain = cfg.get("settings", {}).get("custom_domain", "").strip()
 
-    # Check if dual-stack :: host is supported
-    bind_host = "::"
-    try:
-        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as test_sock:
-            test_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            test_sock.bind(("::", 0))
-    except Exception:
-        bind_host = "0.0.0.0"
+    # Pre-bind listening sockets with explicit IPv4 + IPv6 dual stack
+    sockets = create_server_sockets(port)
 
     print("\n" + "=" * 64)
     print("      本地漫画与画册多端远程阅读器 (Local Comic Reader)")
     print("=" * 64)
-    print(" [✓] 服务已成功启动 (IPv4 / IPv6 双栈已就绪)！\n")
+    print(" [✓] 服务已成功启动 (IPv4 / IPv6 双栈均已就绪)！\n")
     print(f" 💻 本机电脑访问地址 (端口: {port}):")
     print(f"     👉 http://127.0.0.1:{port} 或 http://localhost:{port}\n")
     
+    if custom_domain:
+        print(f" 🌐 自定义动态域名直连 (dynv6 / DDNS):")
+        print(f"     👉 http://{custom_domain}:{port}\n")
+
     if ipv4_list:
         print(" 📱 局域网平板/手机访问地址 (需连接同一 Wi-Fi):")
         for ip in ipv4_list:
@@ -121,9 +175,6 @@ def start_server():
         for ip in ipv6_list:
             print(f"     👉 http://[{ip}]:{port}")
         print("     🔒 安全提示: 检测到远程连接时将自动要求密码验证")
-        print()
-    else:
-        print(" 🌐 提示: 当前未检测到公网 IPv6 地址，若宽带已开通 IPv6 可在路由器开启分配")
         print()
 
     print("-" * 64)
@@ -138,10 +189,9 @@ def start_server():
     import threading
     threading.Thread(target=open_browser, daemon=True).start()
 
-    # Start uvicorn server with dual-stack IPv6 host
-    uvicorn.run(
+    # Start uvicorn server with pre-bound dual-stack sockets
+    config = uvicorn.Config(
         "backend.app:app",
-        host=bind_host,
         port=port,
         reload=False,
         log_level="info",
@@ -149,6 +199,8 @@ def start_server():
         limit_concurrency=200,
         backlog=2048
     )
+    server = uvicorn.Server(config)
+    server.run(sockets=sockets)
 
 
 if __name__ == "__main__":

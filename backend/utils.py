@@ -42,7 +42,19 @@ def get_server_network_info() -> dict:
     ipv4_list = []
     ipv6_list = []
     
-    # 1. Via socket getaddrinfo
+    # 1. UDP socket probing for primary IPv4 first (most accurate for active LAN gateway)
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0.2)
+        s.connect(('8.8.8.8', 80))
+        main_v4 = s.getsockname()[0]
+        s.close()
+        if main_v4 and not main_v4.startswith("127."):
+            ipv4_list.append(main_v4)
+    except Exception:
+        pass
+
+    # 2. Via socket getaddrinfo
     try:
         hostname = socket.gethostname()
         for info in socket.getaddrinfo(hostname, None):
@@ -56,8 +68,8 @@ def get_server_network_info() -> dict:
                 clean_ip = ip.split('%')[0]
                 try:
                     addr = ipaddress.ip_address(clean_ip)
-                    # Include global unicast IPv6 addresses (exclude loopback, link-local, unspecified)
-                    if not addr.is_loopback and not addr.is_link_local and not addr.is_unspecified:
+                    # Only include Global Unicast IPv6 addresses (exclude loopback, link-local, unspecified, ULA)
+                    if addr.is_global and not addr.is_multicast:
                         if clean_ip not in ipv6_list:
                             ipv6_list.append(clean_ip)
                 except Exception:
@@ -65,31 +77,28 @@ def get_server_network_info() -> dict:
     except Exception:
         pass
 
-    # 2. UDP socket probing for primary IPv4
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(0.1)
-        s.connect(('8.8.8.8', 80))
-        main_v4 = s.getsockname()[0]
-        s.close()
-        if main_v4 and main_v4 not in ipv4_list and not main_v4.startswith("127."):
-            ipv4_list.insert(0, main_v4)
-    except Exception:
-        pass
-
     # 3. UDP socket probing for primary IPv6 if available
     try:
         s6 = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        s6.settimeout(0.1)
+        s6.settimeout(0.2)
         s6.connect(('2001:4860:4860::8888', 80))
         main_v6 = s6.getsockname()[0].split('%')[0]
         s6.close()
         addr = ipaddress.ip_address(main_v6)
-        if not addr.is_loopback and not addr.is_link_local and not addr.is_unspecified:
+        if addr.is_global and not addr.is_multicast:
             if main_v6 not in ipv6_list:
                 ipv6_list.insert(0, main_v6)
     except Exception:
         pass
+
+    # Prioritize standard private LAN IP prefixes (192.168.x.x, 10.x.x.x, 172.x.x.x)
+    def ipv4_priority(ip: str) -> int:
+        if ip.startswith("192.168."): return 0
+        if ip.startswith("10."): return 1
+        if ip.startswith("172."): return 2
+        return 3
+
+    ipv4_list.sort(key=ipv4_priority)
 
     if not ipv4_list:
         ipv4_list.append("127.0.0.1")
