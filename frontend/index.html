@@ -491,16 +491,16 @@
                 <!-- Bookmark Ribbon Badges on Top Right (Red = 收藏, Blue = 分类, Yellow = 稍后再看) -->
                 <div 
                   v-if="favoriteIdSet.has(item.id) || categorizedIdSet.has(item.id) || readLaterIdSet.has(item.id)" 
-                  class="absolute top-0 right-2.5 z-20 flex items-start gap-1 pointer-events-none drop-shadow-md"
+                  class="absolute top-0 right-2 sm:right-3.5 z-20 flex items-start gap-1.5 pointer-events-none drop-shadow-lg"
                 >
                   <!-- 红色书签: 收藏 -->
                   <div 
                     v-if="favoriteIdSet.has(item.id)" 
-                    class="w-3.5 h-6 bg-rose-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                    class="w-5 h-8.5 sm:w-6 sm:h-10 bg-rose-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                     title="已收藏"
                   >
-                    <svg class="w-2.5 h-2.5 mb-1.5 fill-current" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-current drop-shadow-sm" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
                   </div>
@@ -508,11 +508,11 @@
                   <!-- 蓝色书签: 分类 -->
                   <div 
                     v-if="categorizedIdSet.has(item.id)" 
-                    class="w-3.5 h-6 bg-blue-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                    class="w-5 h-8.5 sm:w-6 sm:h-10 bg-blue-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                     title="已加入分类"
                   >
-                    <svg class="w-2.5 h-2.5 mb-1.5 fill-none stroke-current" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-none stroke-current drop-shadow-sm" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                     </svg>
                   </div>
@@ -520,11 +520,11 @@
                   <!-- 黄色书签: 稍后再看 -->
                   <div 
                     v-if="readLaterIdSet.has(item.id)" 
-                    class="w-3.5 h-6 bg-amber-500 text-zinc-950 flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                    class="w-5 h-8.5 sm:w-6 sm:h-10 bg-amber-500 text-zinc-950 flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                     title="稍后再看"
                   >
-                    <svg class="w-2.5 h-2.5 mb-1.5 fill-none stroke-current" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-none stroke-current drop-shadow-sm" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                   </div>
@@ -606,16 +606,16 @@
                 <!-- Bookmark Ribbon Badges on Top Right (Red = 收藏, Blue = 分类, Yellow = 稍后再看) -->
                 <div 
                   v-if="favoriteIdSet.has(item.id) || categorizedIdSet.has(item.id) || readLaterIdSet.has(item.id)" 
-                  class="absolute top-0 right-2.5 z-20 flex items-start gap-1 pointer-events-none drop-shadow-md"
+                  class="absolute top-0 right-2 sm:right-3.5 z-20 flex items-start gap-1.5 pointer-events-none drop-shadow-lg"
                 >
                   <!-- 红色书签: 收藏 -->
                   <div 
                     v-if="favoriteIdSet.has(item.id)" 
-                    class="w-3.5 h-6 bg-rose-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                    class="w-5 h-8.5 sm:w-6 sm:h-10 bg-rose-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                     title="已收藏"
                   >
-                    <svg class="w-2.5 h-2.5 mb-1.5 fill-current" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-current drop-shadow-sm" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
                   </div>
@@ -623,11 +623,11 @@
                   <!-- 蓝色书签: 分类 -->
                   <div 
                     v-if="categorizedIdSet.has(item.id)" 
-                    class="w-3.5 h-6 bg-blue-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                    class="w-5 h-8.5 sm:w-6 sm:h-10 bg-blue-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                     title="已加入分类"
                   >
-                    <svg class="w-2.5 h-2.5 mb-1.5 fill-none stroke-current" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-none stroke-current drop-shadow-sm" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                     </svg>
                   </div>
@@ -635,11 +635,11 @@
                   <!-- 黄色书签: 稍后再看 -->
                   <div 
                     v-if="readLaterIdSet.has(item.id)" 
-                    class="w-3.5 h-6 bg-amber-500 text-zinc-950 flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                    class="w-5 h-8.5 sm:w-6 sm:h-10 bg-amber-500 text-zinc-950 flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                     title="稍后再看"
                   >
-                    <svg class="w-2.5 h-2.5 mb-1.5 fill-none stroke-current" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-none stroke-current drop-shadow-sm" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                   </div>
@@ -836,16 +836,16 @@
                 <!-- Bookmark Ribbon Badges on Top Right (Red = 收藏, Blue = 分类, Yellow = 稍后再看) -->
                 <div 
                   v-if="favoriteIdSet.has(item.id) || categorizedIdSet.has(item.id) || readLaterIdSet.has(item.id)" 
-                  class="absolute top-0 right-2.5 z-20 flex items-start gap-1 pointer-events-none drop-shadow-md"
+                  class="absolute top-0 right-2 sm:right-3.5 z-20 flex items-start gap-1.5 pointer-events-none drop-shadow-lg"
                 >
                   <!-- 红色书签: 收藏 -->
                   <div 
                     v-if="favoriteIdSet.has(item.id)" 
-                    class="w-3.5 h-6 bg-rose-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                    class="w-5 h-8.5 sm:w-6 sm:h-10 bg-rose-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                     title="已收藏"
                   >
-                    <svg class="w-2.5 h-2.5 mb-1.5 fill-current" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-current drop-shadow-sm" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
                   </div>
@@ -853,11 +853,11 @@
                   <!-- 蓝色书签: 分类 -->
                   <div 
                     v-if="categorizedIdSet.has(item.id)" 
-                    class="w-3.5 h-6 bg-blue-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                    class="w-5 h-8.5 sm:w-6 sm:h-10 bg-blue-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                     title="已加入分类"
                   >
-                    <svg class="w-2.5 h-2.5 mb-1.5 fill-none stroke-current" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-none stroke-current drop-shadow-sm" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                     </svg>
                   </div>
@@ -865,11 +865,11 @@
                   <!-- 黄色书签: 稍后再看 -->
                   <div 
                     v-if="readLaterIdSet.has(item.id)" 
-                    class="w-3.5 h-6 bg-amber-500 text-zinc-950 flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                    class="w-5 h-8.5 sm:w-6 sm:h-10 bg-amber-500 text-zinc-950 flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                    style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                     title="稍后再看"
                   >
-                    <svg class="w-2.5 h-2.5 mb-1.5 fill-none stroke-current" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-none stroke-current drop-shadow-sm" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                   </div>
@@ -1007,16 +1007,16 @@
                   <!-- Bookmark Ribbon Badges on Folder Top Right (Red = 收藏, Blue = 分类, Yellow = 稍后再看) -->
                   <div 
                     v-if="favoriteIdSet.has(folder.id) || categorizedIdSet.has(folder.id) || readLaterIdSet.has(folder.id)" 
-                    class="absolute top-0 right-2 z-20 flex items-start gap-1 pointer-events-none drop-shadow-md"
+                    class="absolute top-0 right-2 sm:right-3.5 z-20 flex items-start gap-1.5 pointer-events-none drop-shadow-lg"
                   >
                     <!-- 红色书签: 收藏 -->
                     <div 
                       v-if="favoriteIdSet.has(folder.id)" 
-                      class="w-3.5 h-6 bg-rose-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                      class="w-5 h-8.5 sm:w-6 sm:h-10 bg-rose-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                       title="已收藏"
                     >
-                      <svg class="w-2.5 h-2.5 mb-1.5 fill-current" viewBox="0 0 24 24">
+                      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-current drop-shadow-sm" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                       </svg>
                     </div>
@@ -1024,11 +1024,11 @@
                     <!-- 蓝色书签: 分类 -->
                     <div 
                       v-if="categorizedIdSet.has(folder.id)" 
-                      class="w-3.5 h-6 bg-blue-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                      class="w-5 h-8.5 sm:w-6 sm:h-10 bg-blue-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                       title="已加入分类"
                     >
-                      <svg class="w-2.5 h-2.5 mb-1.5 fill-none stroke-current" viewBox="0 0 24 24">
+                      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-none stroke-current drop-shadow-sm" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                       </svg>
                     </div>
@@ -1036,11 +1036,11 @@
                     <!-- 黄色书签: 稍后再看 -->
                     <div 
                       v-if="readLaterIdSet.has(folder.id)" 
-                      class="w-3.5 h-6 bg-amber-500 text-zinc-950 flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                      class="w-5 h-8.5 sm:w-6 sm:h-10 bg-amber-500 text-zinc-950 flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                       title="稍后再看"
                     >
-                      <svg class="w-2.5 h-2.5 mb-1.5 fill-none stroke-current" viewBox="0 0 24 24">
+                      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-none stroke-current drop-shadow-sm" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                       </svg>
                     </div>
@@ -1127,16 +1127,16 @@
                   <!-- Bookmark Ribbon Badges on Comic Top Right (Red = 收藏, Blue = 分类, Yellow = 稍后再看) -->
                   <div 
                     v-if="favoriteIdSet.has(comic.id) || categorizedIdSet.has(comic.id) || readLaterIdSet.has(comic.id)" 
-                    class="absolute top-0 right-2.5 z-20 flex items-start gap-1 pointer-events-none drop-shadow-md"
+                    class="absolute top-0 right-2 sm:right-3.5 z-20 flex items-start gap-1.5 pointer-events-none drop-shadow-lg"
                   >
                     <!-- 红色书签: 收藏 -->
                     <div 
                       v-if="favoriteIdSet.has(comic.id)" 
-                      class="w-3.5 h-6 bg-rose-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                      class="w-5 h-8.5 sm:w-6 sm:h-10 bg-rose-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                       title="已收藏"
                     >
-                      <svg class="w-2.5 h-2.5 mb-1.5 fill-current" viewBox="0 0 24 24">
+                      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-current drop-shadow-sm" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                       </svg>
                     </div>
@@ -1144,11 +1144,11 @@
                     <!-- 蓝色书签: 分类 -->
                     <div 
                       v-if="categorizedIdSet.has(comic.id)" 
-                      class="w-3.5 h-6 bg-blue-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                      class="w-5 h-8.5 sm:w-6 sm:h-10 bg-blue-600 text-white flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                       title="已加入分类"
                     >
-                      <svg class="w-2.5 h-2.5 mb-1.5 fill-none stroke-current" viewBox="0 0 24 24">
+                      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-none stroke-current drop-shadow-sm" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                       </svg>
                     </div>
@@ -1156,11 +1156,11 @@
                     <!-- 黄色书签: 稍后再看 -->
                     <div 
                       v-if="readLaterIdSet.has(comic.id)" 
-                      class="w-3.5 h-6 bg-amber-500 text-zinc-950 flex items-center justify-center rounded-b-[2px] transition-all shadow-sm"
-                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);"
+                      class="w-5 h-8.5 sm:w-6 sm:h-10 bg-amber-500 text-zinc-950 flex items-center justify-center rounded-b-[2px] transition-all shadow-md"
+                      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);"
                       title="稍后再看"
                     >
-                      <svg class="w-2.5 h-2.5 mb-1.5 fill-none stroke-current" viewBox="0 0 24 24">
+                      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-2 fill-none stroke-current drop-shadow-sm" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                       </svg>
                     </div>
@@ -2419,11 +2419,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.1.9"></script>
-  <script src="/static/js/touch.js?v=1.1.9"></script>
-  <script src="/static/js/modules/api.js?v=1.1.9"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.1.9"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.1.9"></script>
-  <script src="/static/js/app.js?v=1.1.9"></script>
+  <script src="/static/js/i18n.js?v=1.2.0"></script>
+  <script src="/static/js/touch.js?v=1.2.0"></script>
+  <script src="/static/js/modules/api.js?v=1.2.0"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.2.0"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.2.0"></script>
+  <script src="/static/js/app.js?v=1.2.0"></script>
 </body>
 </html>
