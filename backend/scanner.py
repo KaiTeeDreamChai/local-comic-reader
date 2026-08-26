@@ -68,7 +68,7 @@ class LibraryScanner:
                 with zipfile.ZipFile(str(target_path), 'r') as zf:
                     return sum(1 for n in zf.namelist() if not n.startswith("__MACOSX/") and not Path(n).name.startswith(".") and Path(n).suffix.lower() in IMAGE_EXTENSIONS)
             if target_path.suffix.lower() in PDF_EXTENSIONS:
-                import fitz
+                import pymupdf as fitz
                 doc = fitz.open(str(target_path))
                 c = len(doc)
                 doc.close()

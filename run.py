@@ -15,7 +15,7 @@ DEFAULT_PORT = 7891
 REQUIRED_PACKAGES = {
     "fastapi": "fastapi",
     "uvicorn": "uvicorn",
-    "fitz": "pymupdf",
+    "pymupdf": "pymupdf",
     "PIL": "pillow",
     "natsort": "natsort",
     "multipart": "python-multipart"
