@@ -140,3 +140,33 @@ def list_drives_or_roots():
         if sys.platform == "darwin" and os.path.exists("/Volumes"):
             roots.append({"name": "外置卷 (/Volumes)", "path": "/Volumes"})
     return roots
+
+
+@router.post("/api/system/allow-firewall")
+def configure_windows_firewall():
+    """Trigger Windows Firewall configuration for port 7891."""
+    if sys.platform != "win32":
+        return {"status": "skipped", "message": "非 Windows 系统无需配置防火墙规则"}
+    
+    port = int(os.environ.get("PORT", 7891))
+    import subprocess
+    try:
+        # Try direct netsh first
+        add_cmd = [
+            "netsh", "advfirewall", "firewall", "add", "rule",
+            f"name=ComicReader-{port}", "dir=in", "action=allow",
+            "protocol=TCP", f"localport={port}", "profile=any",
+            "description=Allow Comic Reader IPv4 and IPv6 access"
+        ]
+        res = subprocess.run(add_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if res.returncode == 0:
+            return {"status": "success", "message": f"Windows 防火墙已成功放行端口 {port}！"}
+        
+        # If elevation needed, trigger PowerShell UAC prompt
+        ps_cmd = f'Start-Process netsh -ArgumentList "advfirewall firewall add rule name=\\"ComicReader-{port}\\" dir=in action=allow protocol=TCP localport={port} profile=any" -Verb RunAs'
+        subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return {"status": "success", "message": "已在 Windows 弹出提权授权窗口，请在电脑上点击【是】确认放行！"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"防火墙配置失败: {str(e)}")
+
+

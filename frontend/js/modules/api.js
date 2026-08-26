@@ -191,6 +191,15 @@ const API = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || '更新安全设置失败');
     return data;
+  },
+
+  async allowFirewall() {
+    const res = await fetch('/api/system/allow-firewall', {
+      method: 'POST'
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || '防火墙放行失败');
+    return data;
   }
 };
 

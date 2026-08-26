@@ -875,6 +875,19 @@ createApp({
       }
     };
 
+    const allowingFirewall = ref(false);
+    const handleAllowFirewall = async () => {
+      allowingFirewall.value = true;
+      try {
+        const res = await window.API.allowFirewall();
+        alert(res.message || '防火墙配置已执行');
+      } catch (e) {
+        alert('配置防火墙失败: ' + (e.message || e));
+      } finally {
+        allowingFirewall.value = false;
+      }
+    };
+
     const copyToClipboard = async (text) => {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -995,6 +1008,8 @@ createApp({
       handleLogin,
       handleLogout,
       handleSaveSecuritySettings,
+      handleAllowFirewall,
+      allowingFirewall,
       copyToClipboard,
 
       // Collections & Categories

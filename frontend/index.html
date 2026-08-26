@@ -2392,6 +2392,25 @@
               </div>
             </div>
 
+            <!-- Windows Firewall Allow Action -->
+            <div class="p-3 bg-zinc-800/60 border border-zinc-750 rounded-xl space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                  <span>🛡️</span>
+                  <span>{{ t('allowFirewallBtn') }}</span>
+                </span>
+                <button 
+                  type="button" 
+                  @click="handleAllowFirewall" 
+                  :disabled="allowingFirewall"
+                  class="px-2.5 py-1 bg-zinc-700 hover:bg-zinc-600 active:scale-95 disabled:opacity-50 text-zinc-200 text-[11px] font-semibold rounded-lg transition-all"
+                >
+                  {{ allowingFirewall ? '执行中...' : '点击放行' }}
+                </button>
+              </div>
+              <p class="text-[11px] text-zinc-400 leading-relaxed">{{ t('allowFirewallDesc') }}</p>
+            </div>
+
             <!-- Coexistence with other services (e.g. Minecraft Server) -->
             <div class="p-3 bg-emerald-950/25 border border-emerald-800/40 rounded-xl text-[11px] text-emerald-300/90 space-y-1">
               <div class="font-bold flex items-center gap-1.5 text-emerald-300">
@@ -2642,11 +2661,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.3.2"></script>
-  <script src="/static/js/touch.js?v=1.3.2"></script>
-  <script src="/static/js/modules/api.js?v=1.3.2"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.3.2"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.3.2"></script>
-  <script src="/static/js/app.js?v=1.3.2"></script>
+  <script src="/static/js/i18n.js?v=1.3.3"></script>
+  <script src="/static/js/touch.js?v=1.3.3"></script>
+  <script src="/static/js/modules/api.js?v=1.3.3"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.3.3"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.3.3"></script>
+  <script src="/static/js/app.js?v=1.3.3"></script>
 </body>
 </html>
