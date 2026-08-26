@@ -1346,70 +1346,98 @@
             </button>
           </template>
 
-          <!-- Reader Quick Collection Actions (Favorite, Read Later, Category) -->
-          <div class="flex items-center gap-1 border-r border-zinc-800 pr-1 mr-0.5">
-            <!-- Favorite Button -->
+          <!-- Desktop Only Quick Controls -->
+          <div class="hidden md:flex items-center gap-1.5">
+            <!-- Reader Quick Collection Actions (Favorite, Read Later, Category) -->
+            <div class="flex items-center gap-1 border-r border-zinc-800 pr-1 mr-0.5">
+              <!-- Favorite Button -->
+              <button 
+                @click="toggleFavorite(currentComic)" 
+                :class="isCurrentComicFavorite ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'text-zinc-400 hover:text-rose-400 hover:bg-zinc-800'"
+                class="p-1.5 rounded-lg transition-all flex items-center justify-center"
+                :title="t('toggleFavoriteTitle')"
+              >
+                <svg class="w-4 h-4" :fill="isCurrentComicFavorite ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                </svg>
+              </button>
+
+              <!-- Read Later Button -->
+              <button 
+                @click="toggleReadLater(currentComic)" 
+                :class="isCurrentComicReadLater ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'text-zinc-400 hover:text-amber-400 hover:bg-zinc-800'"
+                class="p-1.5 rounded-lg transition-all flex items-center justify-center"
+                :title="t('toggleReadLaterTitle')"
+              >
+                <svg class="w-4 h-4" :fill="isCurrentComicReadLater ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </button>
+
+              <!-- Category Button -->
+              <button 
+                @click="openCategorySelectModal(currentComic)" 
+                class="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-zinc-800 rounded-lg transition-all flex items-center justify-center"
+                :title="t('toggleCategoryTitle')"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Fullscreen Toggle -->
             <button 
-              @click="toggleFavorite(currentComic)" 
-              :class="isCurrentComicFavorite ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'text-zinc-400 hover:text-rose-400 hover:bg-zinc-800'"
-              class="p-1.5 rounded-lg transition-all flex items-center justify-center"
-              :title="t('toggleFavoriteTitle')"
+              @click="toggleFullscreen" 
+              class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              :title="t('fullscreen')"
             >
-              <svg class="w-4 h-4" :fill="isCurrentComicFavorite ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+              <svg v-if="!isFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5m-6 11l-5 5m0 0v-4m0 4h4m11-5l5 5m0 0h-4m4 0v-4"></path>
+              </svg>
+              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
             </button>
 
-            <!-- Read Later Button -->
+            <!-- Download / Export File in Reader -->
             <button 
-              @click="toggleReadLater(currentComic)" 
-              :class="isCurrentComicReadLater ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'text-zinc-400 hover:text-amber-400 hover:bg-zinc-800'"
-              class="p-1.5 rounded-lg transition-all flex items-center justify-center"
-              :title="t('toggleReadLaterTitle')"
+              @click="downloadComic(currentComic)" 
+              :title="t('downloadCurrent', { title: currentComic?.title || currentComic?.name || '' })"
+              class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
             >
-              <svg class="w-4 h-4" :fill="isCurrentComicReadLater ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              <svg v-if="!downloadingComics.has(currentComic?.id)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              <svg v-else class="w-4 h-4 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
             </button>
 
-            <!-- Category Button -->
+            <!-- Turbo Mode Toggle in Desktop HUD -->
             <button 
-              @click="openCategorySelectModal(currentComic)" 
-              class="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-zinc-800 rounded-lg transition-all flex items-center justify-center"
-              :title="t('toggleCategoryTitle')"
+              v-if="currentComic?.type !== 'book'"
+              @click="toggleWeakNetworkMode"
+              :title="weakNetworkMode ? t('turboModeOn') : t('turboModeOff')"
+              :class="weakNetworkMode ? 'text-amber-400 bg-amber-500/20' : 'text-zinc-400 hover:text-zinc-200'"
+              class="p-2 rounded-lg transition-colors flex items-center gap-1 text-xs"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+              <svg class="w-4 h-4" :class="{ 'animate-pulse text-amber-400': weakNetworkMode }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
               </svg>
             </button>
           </div>
 
-          <!-- Fullscreen Toggle -->
+          <!-- More Actions / Menu Toggle Button (•••) -->
           <button 
-            @click="toggleFullscreen" 
-            class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-            :title="t('fullscreen')"
+            @click.stop="showReaderMoreMenu = !showReaderMoreMenu" 
+            :class="showReaderMoreMenu ? 'bg-blue-600 text-white border-blue-500 shadow-lg' : 'bg-zinc-800/90 text-zinc-300 border-zinc-700 hover:bg-zinc-700 hover:text-white'"
+            class="p-2 rounded-xl border flex items-center justify-center transition-all active:scale-95 shadow-sm"
+            title="更多操作与设置"
           >
-            <svg v-if="!isFullscreen" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5m-6 11l-5 5m0 0v-4m0 4h4m11-5l5 5m0 0h-4m4 0v-4"></path>
-            </svg>
-            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-
-          <!-- Download / Export File in Reader -->
-          <button 
-            @click="downloadComic(currentComic)" 
-            :title="t('downloadCurrent', { title: currentComic?.title || currentComic?.name || '' })"
-            class="p-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-          >
-            <svg v-if="!downloadingComics.has(currentComic?.id)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-            </svg>
-            <svg v-else class="w-4 h-4 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
             </svg>
           </button>
 
@@ -1436,19 +1464,166 @@
               </svg>
             </button>
           </template>
+        </div>
+      </div>
 
-          <!-- Weak Network Toggle in Reader HUD (for comics/videos) -->
-          <button 
-            v-if="currentComic?.type !== 'book'"
-            @click="toggleWeakNetworkMode"
-            :title="weakNetworkMode ? t('turboModeOn') : t('turboModeOff')"
-            :class="weakNetworkMode ? 'text-amber-400 bg-amber-500/20' : 'text-zinc-400 hover:text-zinc-200'"
-            class="p-2 rounded-lg transition-colors flex items-center gap-1 text-xs"
-          >
-            <svg class="w-4 h-4" :class="{ 'animate-pulse text-amber-400': weakNetworkMode }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-            </svg>
-          </button>
+      <!-- Reader Action Popover Menu (弹出式菜单) -->
+      <div 
+        v-if="showReaderMoreMenu" 
+        class="fixed inset-0 z-50 flex items-start justify-end p-4 pt-14 bg-black/60 backdrop-blur-sm transition-all select-none"
+        @click.self="showReaderMoreMenu = false"
+      >
+        <div class="bg-zinc-900/95 border border-zinc-750 text-zinc-100 rounded-2xl p-4 shadow-2xl backdrop-blur-2xl w-full max-w-xs sm:w-80 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-150">
+          <!-- Header -->
+          <div class="flex items-center justify-between pb-2.5 border-b border-zinc-800">
+            <div class="flex items-center gap-2 min-w-0 pr-2">
+              <span class="text-sm">📖</span>
+              <span class="text-xs font-bold text-zinc-200 truncate">{{ currentComic?.title }}</span>
+            </div>
+            <button @click="showReaderMoreMenu = false" class="text-zinc-400 hover:text-white p-1 rounded-lg">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- 1. 收藏、稍后再看与分类 -->
+          <div>
+            <div class="text-[11px] font-semibold text-zinc-400 mb-2">
+              {{ t('readerMenuCollections') }}
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <!-- 收藏 -->
+              <button 
+                @click="toggleFavorite(currentComic)" 
+                :class="isCurrentComicFavorite ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 font-bold shadow-sm' : 'bg-zinc-800/90 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs transition-all active:scale-95"
+              >
+                <svg class="w-5 h-5" :fill="isCurrentComicFavorite ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                </svg>
+                <span class="text-[11px]">{{ isCurrentComicFavorite ? t('favorited') : t('addToFav') }}</span>
+              </button>
+
+              <!-- 稍后再看 -->
+              <button 
+                @click="toggleReadLater(currentComic)" 
+                :class="isCurrentComicReadLater ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 font-bold shadow-sm' : 'bg-zinc-800/90 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs transition-all active:scale-95"
+              >
+                <svg class="w-5 h-5" :fill="isCurrentComicReadLater ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-[11px]">{{ isCurrentComicReadLater ? t('readLaterActive') : t('addToReadLater') }}</span>
+              </button>
+
+              <!-- 分类 -->
+              <button 
+                @click="openCategorySelectModal(currentComic); showReaderMoreMenu = false;" 
+                class="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl border bg-zinc-800/90 text-zinc-300 border-zinc-700 hover:bg-zinc-700 hover:text-blue-400 text-xs transition-all active:scale-95"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                </svg>
+                <span class="text-[11px]">{{ t('manageCategory') }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. 阅读偏好与排版 (Novel / Comic) -->
+          <div class="pt-2 border-t border-zinc-800">
+            <div class="text-[11px] font-semibold text-zinc-400 mb-2">
+              {{ t('readerMenuSettings') }}
+            </div>
+
+            <!-- Novel Controls -->
+            <template v-if="currentComic?.type === 'book'">
+              <div class="space-y-2.5">
+                <!-- 字号 -->
+                <div class="flex items-center justify-between bg-zinc-800/70 p-2 rounded-xl border border-zinc-750">
+                  <span class="text-xs text-zinc-300 font-medium">字号大小</span>
+                  <div class="flex items-center gap-2">
+                    <button @click="changeNovelFontSize(-2)" class="px-2.5 py-1 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-xs font-bold transition-all">A-</button>
+                    <span class="text-xs font-mono text-zinc-200 w-5 text-center font-bold">{{ novelFontSize }}</span>
+                    <button @click="changeNovelFontSize(2)" class="px-2.5 py-1 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-xs font-bold transition-all">A+</button>
+                  </div>
+                </div>
+
+                <!-- 背景主题 -->
+                <div class="flex items-center justify-between bg-zinc-800/70 p-2 rounded-xl border border-zinc-750">
+                  <span class="text-xs text-zinc-300 font-medium">阅读主题</span>
+                  <div class="flex items-center gap-2">
+                    <button @click="setNovelTheme('day')" :class="novelTheme === 'day' ? 'ring-2 ring-blue-500 scale-110' : 'opacity-70'" class="w-6 h-6 rounded-full bg-[#faf9f5] border border-zinc-300 transition-all"></button>
+                    <button @click="setNovelTheme('sepia')" :class="novelTheme === 'sepia' ? 'ring-2 ring-amber-500 scale-110' : 'opacity-70'" class="w-6 h-6 rounded-full bg-[#f6ebd4] border border-amber-300 transition-all"></button>
+                    <button @click="setNovelTheme('green')" :class="novelTheme === 'green' ? 'ring-2 ring-emerald-500 scale-110' : 'opacity-70'" class="w-6 h-6 rounded-full bg-[#dceada] border border-emerald-300 transition-all"></button>
+                    <button @click="setNovelTheme('night')" :class="novelTheme === 'night' ? 'ring-2 ring-blue-500 scale-110' : 'opacity-70'" class="w-6 h-6 rounded-full bg-[#18181b] border border-zinc-700 transition-all"></button>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Comic Controls -->
+            <template v-else-if="currentComic?.type !== 'video'">
+              <div class="grid grid-cols-2 gap-2">
+                <!-- 翻页 vs 瀑布流 -->
+                <button 
+                  @click="toggleReadingMode" 
+                  class="p-2.5 rounded-xl border bg-zinc-800/90 hover:bg-zinc-700 border-zinc-700 text-xs flex items-center justify-center gap-1.5 transition-all font-medium"
+                >
+                  <span>{{ readingMode === 'paged' ? '📄 翻页模式' : '📜 瀑布流' }}</span>
+                </button>
+
+                <!-- 日漫 RTL vs 普通 LTR -->
+                <button 
+                  v-if="readingMode === 'paged'"
+                  @click="toggleReadingDirection" 
+                  class="p-2.5 rounded-xl border bg-zinc-800/90 hover:bg-zinc-700 border-zinc-700 text-xs flex items-center justify-center gap-1.5 transition-all font-medium"
+                >
+                  <span>{{ readingDirection === 'rtl' ? '📖 日漫 (右向左)' : '📘 普通 (左向右)' }}</span>
+                </button>
+
+                <!-- 双页连页 -->
+                <button 
+                  v-if="isWideOrLandscape && readingMode === 'paged'"
+                  @click="togglePageSpread" 
+                  :class="isDoublePage ? 'bg-blue-600/30 text-blue-400 border-blue-500/50' : 'bg-zinc-800/90 text-zinc-300 border-zinc-700'"
+                  class="p-2.5 rounded-xl border text-xs flex items-center justify-center gap-1.5 transition-all col-span-2 font-medium"
+                >
+                  <span>{{ pageSpread === 'double' ? '📖 双页连页模式' : '📄 单页阅读模式' }}</span>
+                </button>
+              </div>
+            </template>
+          </div>
+
+          <!-- 3. 系统与快捷工具 (全屏、下载) -->
+          <div class="pt-2 border-t border-zinc-800 grid grid-cols-2 gap-2">
+            <!-- 全屏 -->
+            <button 
+              @click="toggleFullscreen" 
+              class="p-2.5 rounded-xl border bg-zinc-800/90 border-zinc-700 hover:bg-zinc-700 text-xs flex items-center justify-center gap-1.5 transition-all font-medium"
+            >
+              <svg class="w-4 h-4 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path v-if="!isFullscreen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5m-6 11l-5 5m0 0v-4m0 4h4m11-5l5 5m0 0h-4m4 0v-4"></path>
+                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+              <span>{{ isFullscreen ? '退出全屏' : '全屏阅读' }}</span>
+            </button>
+
+            <!-- 下载导出 -->
+            <button 
+              @click="downloadComic(currentComic)" 
+              class="p-2.5 rounded-xl border bg-zinc-800/90 border-zinc-700 hover:bg-zinc-700 text-xs flex items-center justify-center gap-1.5 transition-all font-medium"
+            >
+              <svg v-if="!downloadingComics.has(currentComic?.id)" class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              <svg v-else class="w-4 h-4 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span>下载导出</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2661,11 +2836,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.3.3"></script>
-  <script src="/static/js/touch.js?v=1.3.3"></script>
-  <script src="/static/js/modules/api.js?v=1.3.3"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.3.3"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.3.3"></script>
-  <script src="/static/js/app.js?v=1.3.3"></script>
+  <script src="/static/js/i18n.js?v=1.3.4"></script>
+  <script src="/static/js/touch.js?v=1.3.4"></script>
+  <script src="/static/js/modules/api.js?v=1.3.4"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.3.4"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.3.4"></script>
+  <script src="/static/js/app.js?v=1.3.4"></script>
 </body>
 </html>

@@ -101,6 +101,7 @@ createApp({
     // 6. Common Reader State
     const currentComic = ref(null);
     const currentPageIndex = ref(0);
+    const showReaderMoreMenu = ref(false);
 
     // 6. Internationalization (i18n)
     const currentLang = ref(localStorage.getItem('comic_lang') || 'zh');
@@ -520,6 +521,7 @@ createApp({
         comicReader.showHud.value = true;
         comicReader.showThumbnailDrawer.value = false;
         novelReader.showBookmarkDrawer.value = false;
+        showReaderMoreMenu.value = false;
         comicReader.loadedPages.value.clear();
 
         await nextTick();
@@ -546,6 +548,7 @@ createApp({
     };
 
     const closeReader = () => {
+      showReaderMoreMenu.value = false;
       if (touchController) {
         touchController.destroy();
         touchController = null;
@@ -983,6 +986,7 @@ createApp({
       handleDeleteBookshelf,
       openComic,
       closeReader,
+      showReaderMoreMenu,
       seekVideo,
       goHome,
       goBack,

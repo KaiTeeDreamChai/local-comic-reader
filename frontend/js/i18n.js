@@ -195,7 +195,16 @@ const i18n = {
     coexistenceTipTitle: '多服务并存保障 (与 MC 服务器等)',
     coexistenceTipDesc: '本阅读器仅占用专属端口 (7891)，与同一主机上的 Minecraft (25565)、网页服务器等其他网络服务端口完全独立隔离，不会冲突或影响其他服务的正常运行。',
     allowFirewallBtn: '一键放行 Windows 防火墙 (端口 7891)',
-    allowFirewallDesc: '若手机 5G/外网访问提示响应超时，可点击此按钮自动向 Windows Defender 防火墙添加 7891 端口入站规则。'
+    allowFirewallDesc: '若手机 5G/外网访问提示响应超时，可点击此按钮自动向 Windows Defender 防火墙添加 7891 端口入站规则。',
+    readerMenuTitle: '阅读与管理菜单',
+    readerMenuCollections: '收藏与分类',
+    readerMenuSettings: '阅读设置与排版',
+    readerMenuTools: '快捷工具',
+    favorited: '已收藏',
+    addToFav: '加入收藏',
+    readLaterActive: '稍后再看',
+    addToReadLater: '稍后再看',
+    manageCategory: '管理分类'
   },
 
   en: {
@@ -379,7 +388,16 @@ const i18n = {
     coexistenceTipTitle: 'Service Coexistence (e.g. Minecraft Server)',
     coexistenceTipDesc: 'This application strictly uses its dedicated port (default 7891) and runs completely isolated from other host services like Minecraft (25565) or Web servers, ensuring no port collision or interference.',
     allowFirewallBtn: 'Allow Windows Firewall (Port 7891)',
-    allowFirewallDesc: 'If remote 5G access times out, click this button to add inbound allow rules to Windows Defender Firewall.'
+    allowFirewallDesc: 'If remote 5G access times out, click this button to add inbound allow rules to Windows Defender Firewall.',
+    readerMenuTitle: 'Reader Actions & Settings',
+    readerMenuCollections: 'Collections & Categories',
+    readerMenuSettings: 'Reading Preferences & Layout',
+    readerMenuTools: 'Quick Tools',
+    favorited: 'Favorited',
+    addToFav: 'Favorite',
+    readLaterActive: 'In Read Later',
+    addToReadLater: 'Read Later',
+    manageCategory: 'Categories'
   }
 };
 
