@@ -158,7 +158,7 @@ def configure_windows_firewall():
             "protocol=TCP", f"localport={port}", "profile=any",
             "description=Allow Comic Reader IPv4 and IPv6 access"
         ]
-        res = subprocess.run(add_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        res = subprocess.run(add_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if res.returncode == 0:
             return {"status": "success", "message": f"Windows 防火墙已成功放行端口 {port}！"}
         

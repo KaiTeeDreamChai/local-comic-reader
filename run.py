@@ -139,8 +139,9 @@ def ensure_windows_firewall_rule(port: int):
         return
     try:
         check_cmd = ["netsh", "advfirewall", "firewall", "show", "rule", f"name=ComicReader-{port}"]
-        res = subprocess.run(check_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if f"ComicReader-{port}" not in res.stdout:
+        res = subprocess.run(check_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout_bytes = res.stdout or b""
+        if f"ComicReader-{port}".encode("ascii") not in stdout_bytes:
             add_cmd = [
                 "netsh", "advfirewall", "firewall", "add", "rule",
                 f"name=ComicReader-{port}", "dir=in", "action=allow",
