@@ -216,7 +216,15 @@ const i18n = {
     sortDescShort: '降序',
     sortLabel: '排序',
     defaultSortSetting: '默认排序规则',
-    defaultSortOrderSetting: '默认排序顺序'
+    defaultSortOrderSetting: '默认排序顺序',
+
+    // Theme Appearance
+    themeSetting: '外观主题',
+    themeDark: '暗色模式',
+    themeLight: '亮色模式',
+    themeAuto: '跟随系统',
+    themeAutoDesc: '根据设备系统深色/浅色外观偏好自动切换',
+    themeTooltip: '切换外观主题'
   },
 
   en: {
@@ -421,7 +429,15 @@ const i18n = {
     sortDescShort: 'Desc',
     sortLabel: 'Sort',
     defaultSortSetting: 'Default Sort Rule',
-    defaultSortOrderSetting: 'Default Sort Order'
+    defaultSortOrderSetting: 'Default Sort Order',
+
+    // Theme Appearance
+    themeSetting: 'Theme Appearance',
+    themeDark: 'Dark Mode',
+    themeLight: 'Light Mode',
+    themeAuto: 'Auto (System)',
+    themeAutoDesc: 'Automatically adapt to system light/dark theme preference',
+    themeTooltip: 'Toggle Theme Appearance'
   }
 };
 

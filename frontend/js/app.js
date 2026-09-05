@@ -122,6 +122,46 @@ createApp({
       document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
     };
 
+    // 6.5 Theme Management (Dark / Light / Auto)
+    const themeMode = ref(localStorage.getItem('comic_theme_mode') || 'auto'); // 'dark' | 'light' | 'auto'
+    const systemPrefersDark = ref(window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : true);
+
+    const isDarkMode = computed(() => {
+      if (themeMode.value === 'dark') return true;
+      if (themeMode.value === 'light') return false;
+      return systemPrefersDark.value;
+    });
+
+    const applyTheme = (mode) => {
+      themeMode.value = mode;
+      localStorage.setItem('comic_theme_mode', mode);
+
+      const dark = mode === 'dark' || (mode === 'auto' && (window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : true));
+      if (dark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      }
+
+      const meta = document.querySelector('meta[name="color-scheme"]');
+      if (meta) {
+        meta.content = dark ? 'dark' : 'light';
+      }
+    };
+
+    const toggleThemeMode = () => {
+      // Cycle: dark -> light -> auto -> dark
+      if (themeMode.value === 'dark') {
+        applyTheme('light');
+      } else if (themeMode.value === 'light') {
+        applyTheme('auto');
+      } else {
+        applyTheme('dark');
+      }
+    };
+
     // 7. Compose Submodules
     const novelReader = window.useNovelReader(currentComic, currentPageIndex);
     const comicReader = window.useComicReader(currentComic, currentPageIndex, weakNetworkMode, t);
@@ -1010,12 +1050,31 @@ createApp({
       showSortMenu.value = false;
     };
 
+    let themeMediaQuery = null;
+    const handleThemeMediaChange = (e) => {
+      systemPrefersDark.value = e.matches;
+      if (themeMode.value === 'auto') {
+        applyTheme('auto');
+      }
+    };
+
     onMounted(async () => {
       comicReader.updateScreenOrientation();
       window.addEventListener('resize', comicReader.updateScreenOrientation);
       window.addEventListener('orientationchange', comicReader.updateScreenOrientation);
       window.addEventListener('keydown', handleKeyDown);
       document.addEventListener('click', onDocumentClick);
+
+      if (window.matchMedia) {
+        themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        systemPrefersDark.value = themeMediaQuery.matches;
+        if (themeMediaQuery.addEventListener) {
+          themeMediaQuery.addEventListener('change', handleThemeMediaChange);
+        } else if (themeMediaQuery.addListener) {
+          themeMediaQuery.addListener(handleThemeMediaChange);
+        }
+      }
+      applyTheme(themeMode.value);
 
       try {
         const info = await window.API.getSystemInfo();
@@ -1043,6 +1102,13 @@ createApp({
       window.removeEventListener('orientationchange', comicReader.updateScreenOrientation);
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('click', onDocumentClick);
+      if (themeMediaQuery) {
+        if (themeMediaQuery.removeEventListener) {
+          themeMediaQuery.removeEventListener('change', handleThemeMediaChange);
+        } else if (themeMediaQuery.removeListener) {
+          themeMediaQuery.removeListener(handleThemeMediaChange);
+        }
+      }
       if (touchController) {
         touchController.destroy();
       }
@@ -1152,11 +1218,15 @@ createApp({
       isComicInCategory,
       toggleComicCategory,
 
-      // i18n
+      // i18n & Theme
       currentLang,
       t,
       setLanguage,
       saveSettings,
+      themeMode,
+      isDarkMode,
+      applyTheme,
+      toggleThemeMode,
 
       // Comic Reader (Spread from comicReader module)
       currentComic,

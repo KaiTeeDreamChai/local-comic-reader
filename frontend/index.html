@@ -3,11 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <title>Local Comic & Media Reader</title>
   
+  <!-- Early Theme Initialization (Prevent FOUC) -->
+  <script>
+    (function() {
+      try {
+        const theme = localStorage.getItem('comic_theme_mode') || 'auto';
+        const prefersDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : true;
+        const isDark = theme === 'dark' || (theme === 'auto' && prefersDark);
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        }
+        const meta = document.querySelector('meta[name="color-scheme"]');
+        if (meta) meta.content = isDark ? 'dark' : 'light';
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- Tailwind CSS (Local Vendor for 100% Offline / Fast LAN Loading) -->
   <script src="/static/vendor/tailwind.min.js"></script>
   <script>
@@ -32,7 +53,7 @@
   <script src="/static/vendor/vue.global.prod.js"></script>
 
   <!-- Custom Touch and Animation CSS -->
-  <link rel="stylesheet" href="/static/css/style.css?v=1.1.2">
+  <link rel="stylesheet" href="/static/css/style.css?v=1.3.6">
 </head>
 <body class="bg-zinc-950 text-zinc-100 h-full flex flex-col overflow-hidden font-sans antialiased select-none">
   <div id="app" class="h-full flex flex-col" v-cloak>
@@ -235,6 +256,26 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
             <span>{{ t('bookshelfManage') }}</span>
+          </button>
+
+          <!-- Theme Toggle Button (Dark / Light / Auto) -->
+          <button 
+            @click="toggleThemeMode"
+            :title="t('themeTooltip') + ': ' + (themeMode === 'auto' ? (t('themeAuto') + (isDarkMode ? ' (🌙)' : ' (☀️)')) : (themeMode === 'dark' ? t('themeDark') : t('themeLight')))"
+            class="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition-colors flex items-center justify-center relative"
+          >
+            <!-- Auto / Follow System Icon -->
+            <svg v-if="themeMode === 'auto'" class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <!-- Dark Mode Icon -->
+            <svg v-else-if="themeMode === 'dark'" class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+            </svg>
+            <!-- Light Mode Icon -->
+            <svg v-else class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
           </button>
 
           <!-- Settings Button -->
@@ -472,6 +513,45 @@
                   <div class="w-4 h-4 rounded-full bg-white shadow-md"></div>
                 </div>
               </button>
+
+              <!-- Theme Appearance Selection Card -->
+              <div class="p-3 bg-zinc-800/80 rounded-xl border border-zinc-750 space-y-2">
+                <div class="flex items-center justify-between text-xs text-zinc-300 font-semibold">
+                  <span class="flex items-center gap-1.5">
+                    <span>🎨</span>
+                    <span>{{ t('themeSetting') }}</span>
+                  </span>
+                  <span class="text-[10px] text-zinc-400 font-normal">
+                    {{ themeMode === 'auto' ? (t('themeAuto') + (isDarkMode ? ' (🌙)' : ' (☀️)')) : (themeMode === 'dark' ? t('themeDark') : t('themeLight')) }}
+                  </span>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5 text-xs">
+                  <button 
+                    @click="applyTheme('dark')"
+                    :class="themeMode === 'dark' ? 'bg-blue-600 text-white font-bold shadow' : 'bg-zinc-700/50 text-zinc-300 hover:bg-zinc-700'"
+                    class="py-1.5 px-2 rounded-lg text-center transition-all flex items-center justify-center gap-1 text-[11px]"
+                  >
+                    <span>🌙</span>
+                    <span>{{ t('themeDark') }}</span>
+                  </button>
+                  <button 
+                    @click="applyTheme('light')"
+                    :class="themeMode === 'light' ? 'bg-blue-600 text-white font-bold shadow' : 'bg-zinc-700/50 text-zinc-300 hover:bg-zinc-700'"
+                    class="py-1.5 px-2 rounded-lg text-center transition-all flex items-center justify-center gap-1 text-[11px]"
+                  >
+                    <span>☀️</span>
+                    <span>{{ t('themeLight') }}</span>
+                  </button>
+                  <button 
+                    @click="applyTheme('auto')"
+                    :class="themeMode === 'auto' ? 'bg-blue-600 text-white font-bold shadow' : 'bg-zinc-700/50 text-zinc-300 hover:bg-zinc-700'"
+                    class="py-1.5 px-2 rounded-lg text-center transition-all flex items-center justify-center gap-1 text-[11px]"
+                  >
+                    <span>💻</span>
+                    <span>{{ t('themeAuto') }}</span>
+                  </button>
+                </div>
+              </div>
 
               <!-- Settings -->
               <button 
@@ -2555,6 +2635,42 @@
             </div>
           </div>
 
+          <!-- Theme Appearance Selector (Dark / Light / Auto) -->
+          <div class="pt-2 border-t border-zinc-800">
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-xs font-semibold text-zinc-300">{{ t('themeSetting') }}</label>
+              <span class="text-[10px] text-zinc-400 font-normal">
+                {{ themeMode === 'auto' ? t('themeAutoDesc') : '' }}
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <button 
+                @click="applyTheme('dark')" 
+                :class="themeMode === 'dark' ? 'bg-blue-600 text-white font-bold border-blue-500 shadow-md' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="py-2.5 px-3 rounded-xl border text-xs flex items-center justify-center gap-1.5 transition-all"
+              >
+                <span>🌙</span>
+                <span>{{ t('themeDark') }}</span>
+              </button>
+              <button 
+                @click="applyTheme('light')" 
+                :class="themeMode === 'light' ? 'bg-blue-600 text-white font-bold border-blue-500 shadow-md' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="py-2.5 px-3 rounded-xl border text-xs flex items-center justify-center gap-1.5 transition-all"
+              >
+                <span>☀️</span>
+                <span>{{ t('themeLight') }}</span>
+              </button>
+              <button 
+                @click="applyTheme('auto')" 
+                :class="themeMode === 'auto' ? 'bg-blue-600 text-white font-bold border-blue-500 shadow-md' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'"
+                class="py-2.5 px-3 rounded-xl border text-xs flex items-center justify-center gap-1.5 transition-all"
+              >
+                <span>💻</span>
+                <span>{{ t('themeAuto') }}</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Reading Mode Preference -->
           <div class="pt-2 border-t border-zinc-800">
             <label class="block text-xs font-semibold text-zinc-300 mb-2">{{ t('defaultReadingMode') }}</label>
@@ -3028,11 +3144,11 @@
   </div>
 
   <!-- Custom Scripts & Modules -->
-  <script src="/static/js/i18n.js?v=1.3.5"></script>
-  <script src="/static/js/touch.js?v=1.3.5"></script>
-  <script src="/static/js/modules/api.js?v=1.3.5"></script>
-  <script src="/static/js/modules/novelReader.js?v=1.3.5"></script>
-  <script src="/static/js/modules/comicReader.js?v=1.3.5"></script>
-  <script src="/static/js/app.js?v=1.3.5"></script>
+  <script src="/static/js/i18n.js?v=1.3.6"></script>
+  <script src="/static/js/touch.js?v=1.3.6"></script>
+  <script src="/static/js/modules/api.js?v=1.3.6"></script>
+  <script src="/static/js/modules/novelReader.js?v=1.3.6"></script>
+  <script src="/static/js/modules/comicReader.js?v=1.3.6"></script>
+  <script src="/static/js/app.js?v=1.3.6"></script>
 </body>
 </html>
