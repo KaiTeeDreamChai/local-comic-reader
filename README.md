@@ -9,6 +9,8 @@
 [![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Modern%20Web-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square)](https://github.com/KaiTeeDreamChai/local-comic-reader)
+[![Agent Guide](https://img.shields.io/badge/Agent_Docs-AGENTS.md-blue?style=flat-square&logo=markdown)](AGENTS.md)
+[![Project Progress](https://img.shields.io/badge/Progress-PROGRESS.md-orange?style=flat-square&logo=git)](PROGRESS.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 [![Vibe Coding](https://img.shields.io/badge/Built%20with-Vibe%20Coding-blueviolet?style=flat-square)](https://github.com/KaiTeeDreamChai)
 
@@ -164,6 +166,13 @@ local-comic-reader/
 ├── run.sh                 # macOS/Linux 启动脚本
 └── requirements.txt       # Python 依赖清单
 ```
+
+---
+
+## 📚 开发者与 Agent 指南 (Developer & Agent Docs)
+
+- 🤖 **[AGENTS.md](AGENTS.md)**：专为 AI Agent 与后续协作者打造的系统维护手册，包含核心架构、设计原则、安全边界、模块细节与避坑指南。
+- 📈 **[PROGRESS.md](PROGRESS.md)**：项目全量已完成功能矩阵、当前开发节点、技术指标评估与阶段演进路线图。
 
 ---
 
