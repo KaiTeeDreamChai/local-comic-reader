@@ -172,7 +172,8 @@ local-comic-reader/
 ## 📚 开发者与 Agent 指南 (Developer & Agent Docs)
 
 - 🤖 **[AGENTS.md](AGENTS.md)**：专为 AI Agent 与后续协作者打造的系统维护手册，包含核心架构、设计原则、安全边界、模块细节与避坑指南。
-- 📈 **[PROGRESS.md](PROGRESS.md)**：项目全量已完成功能矩阵、当前开发节点、技术指标评估与阶段演进路线图。
+- 🌟 **[GEMINI.md](GEMINI.md)**：面向 Gemini / Google Antigravity 等 AI 助手的专门上下文指引与核心操作守则。
+- 📈 **[PROGRESS.md](PROGRESS.md)**：项目全量已完成功能矩阵、当前开发节点、技术指标评估、阶段演进路线图及**完整变更审计日志**。
 
 ---
 
